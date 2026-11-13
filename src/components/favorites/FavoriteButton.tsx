@@ -8,9 +8,15 @@ type FavoriteButtonProps = {
   className?: string;
 };
 
-function IconHeart({ active }: { active: boolean }) {
+function IconHeart({
+  active,
+  size = 16,
+}: {
+  active: boolean;
+  size?: number;
+}) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
       <path
         d="M12 20.5s-7-4.6-7-10a4 4 0 0 1 7-2.2A4 4 0 0 1 19 10.5c0 5.4-7 10-7 10Z"
         fill={active ? "currentColor" : "none"}
@@ -62,7 +68,7 @@ export function FavoriteButton({
         type="button"
         onClick={handleClick}
         disabled={!isReady}
-        className={`inline-flex h-10 w-10 items-center justify-center transition-colors ${
+        className={`inline-flex h-12 w-12 items-center justify-center transition-colors ${
           active
             ? "text-brand-terracotta"
             : "text-brand-olive-dark hover:text-brand-terracotta"
@@ -71,7 +77,7 @@ export function FavoriteButton({
         aria-label={active ? "Убрать из избранного" : "Добавить в избранное"}
         title={active ? "Убрать из избранного" : "Добавить в избранное"}
       >
-        <IconHeart active={active} />
+        <IconHeart active={active} size={28} />
       </button>
     );
   }

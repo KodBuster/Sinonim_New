@@ -16,22 +16,63 @@ const PRODUCT_PERKS = [
   "Шоурум в Москве",
 ] as const;
 
+const PERK_SLIDE_MS = 450;
+
 function ProductPerksCarousel() {
   const [index, setIndex] = useState(0);
+  const [animate, setAnimate] = useState(true);
+  const trackSlides = [...PRODUCT_PERKS, PRODUCT_PERKS[0]];
+  const activeDot = index % PRODUCT_PERKS.length;
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setIndex((current) => (current + 1) % PRODUCT_PERKS.length);
+      setAnimate(true);
+      setIndex((current) => current + 1);
     }, 4000);
     return () => window.clearInterval(timer);
   }, [index]);
 
+  useEffect(() => {
+    if (index < PRODUCT_PERKS.length) return;
+    const timer = window.setTimeout(() => {
+      setAnimate(false);
+      setIndex(0);
+    }, PERK_SLIDE_MS);
+    return () => window.clearTimeout(timer);
+  }, [index]);
+
+  useEffect(() => {
+    if (animate || index !== 0) return;
+    const frame = window.requestAnimationFrame(() => setAnimate(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [animate, index]);
+
+  const goTo = (target: number) => {
+    setAnimate(true);
+    setIndex(target);
+  };
+
   return (
     <div>
-      <div className="relative overflow-hidden bg-[#f3f1ec] px-4 py-3 text-center text-sm text-brand-olive-dark">
-        <p key={PRODUCT_PERKS[index]} className="transition-opacity duration-300">
-          {PRODUCT_PERKS[index]}
-        </p>
+      <div className="relative overflow-hidden bg-[#f3f1ec] py-3 text-sm text-brand-olive-dark">
+        <div
+          className={`flex ease-out ${
+            animate ? "transition-transform" : ""
+          }`}
+          style={{
+            transform: `translateX(-${index * 100}%)`,
+            transitionDuration: animate ? `${PERK_SLIDE_MS}ms` : "0ms",
+          }}
+        >
+          {trackSlides.map((perk, slideIndex) => (
+            <p
+              key={`${perk}-${slideIndex}`}
+              className="w-full shrink-0 px-4 text-center"
+            >
+              {perk}
+            </p>
+          ))}
+        </div>
       </div>
       <div className="mt-2 flex justify-end gap-1.5 pr-0.5">
         {PRODUCT_PERKS.map((perk, perkIndex) => (
@@ -39,10 +80,10 @@ function ProductPerksCarousel() {
             key={perk}
             type="button"
             aria-label={perk}
-            aria-current={perkIndex === index}
-            onClick={() => setIndex(perkIndex)}
+            aria-current={perkIndex === activeDot}
+            onClick={() => goTo(perkIndex)}
             className={`h-1.5 w-1.5 rounded-full transition-colors ${
-              perkIndex === index ? "bg-black" : "bg-black/25"
+              perkIndex === activeDot ? "bg-black" : "bg-black/25"
             }`}
           />
         ))}

@@ -4,7 +4,7 @@ import { COLLECTIONS } from "@/components/redesign/data";
 export function ProductCategories() {
   return (
     <section aria-label="Категории">
-      <div className="grid grid-cols-2 gap-1 md:grid-cols-4 md:gap-1.5 lg:gap-2">
+      <div className="grid grid-cols-2 gap-[10px] md:grid-cols-4">
         {COLLECTIONS.map((category) => (
           <Link
             key={category.id}

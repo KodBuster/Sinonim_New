@@ -11,6 +11,7 @@ import { ProductCategories } from "./ProductCategories";
 import { ProductComplectSection } from "./ProductComplectSection";
 import { ProductConfigurator } from "./ProductConfigurator";
 import { ProductGallery } from "./ProductGallery";
+import { ProductInspiredSection } from "./ProductInspiredSection";
 import { ProductSelectionProvider } from "./ProductSelectionContext";
 
 type ProductPageProps = {
@@ -61,12 +62,8 @@ export function ProductPage({
 
       <Suspense fallback={null}>
         <ProductSelectionProvider product={product}>
-          {/*
-            Sticky gallery only pairs with the buy CTA row, then categories
-            follow immediately so the gap under photos stays small.
-          */}
           <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
-            <div className="grid items-start gap-x-8 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-x-10 lg:gap-y-5 xl:gap-x-14">
+            <div className="grid items-start gap-x-8 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-x-10 xl:gap-x-14">
               <div className="min-w-0 lg:sticky lg:top-[var(--site-header-height,0px)] lg:self-start">
                 <div className="mb-3 md:mb-4">
                   <Link
@@ -120,25 +117,20 @@ export function ProductPage({
                 </p>
 
                 <ProductConfigurator product={product} showAccordions={false} />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 md:mt-5 px-1 md:px-1.5 lg:px-2">
-            <ProductCategories />
-          </div>
-
-          <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
-            <div className="mt-6 grid items-start lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-x-10 xl:gap-x-14">
-              <div className="hidden lg:block" aria-hidden />
-              <div className="min-w-0">
                 <ProductAccordions product={product} />
                 {complectProducts.length > 0 && product.setArtNos?.length ? (
                   <ProductComplectSection products={complectProducts} />
                 ) : null}
+                <ProductInspiredSection />
               </div>
             </div>
+          </div>
 
+          <div className="mt-4 md:mt-5">
+            <ProductCategories />
+          </div>
+
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
             {related.length > 0 && (
               <div className="mt-16 md:mt-20">
                 <h2 className="mb-6 font-heading text-2xl text-brand-olive-dark md:text-[1.75rem]">

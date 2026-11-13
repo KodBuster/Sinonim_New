@@ -142,15 +142,19 @@ function GalleryThumbnails({
   viewportHeight = null,
   style,
 }: GalleryThumbnailsProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const wheelLockRef = useRef(false);
-  const loopingRef = useRef(false);
-  const initializedRef = useRef(false);
+  const initKeyRef = useRef<string | null>(null);
 
-  const snapMode = viewportHeight != null && viewportHeight > 0;
+  const roundedViewport =
+    viewportHeight != null && viewportHeight > 0
+      ? Math.round(viewportHeight)
+      : null;
+  const snapMode = roundedViewport != null;
   const infinite = snapMode && slides.length > 1;
   const thumbHeight = snapMode
-    ? (viewportHeight - THUMB_PAIR_GAP) / 2
+    ? (roundedViewport - THUMB_PAIR_GAP) / 2
     : null;
   const thumbWidth = thumbHeight != null ? thumbHeight * 0.75 : null;
   const stepSize =
@@ -167,18 +171,18 @@ function GalleryThumbnails({
 
   const normalizeLoop = useCallback(() => {
     const el = listRef.current;
-    if (!el || setHeight == null || setHeight <= 0) return;
-    let top = el.scrollTop;
-    if (top < setHeight) {
-      loopingRef.current = true;
+    if (!el || !infinite || setHeight == null || setHeight <= 0) return;
+    const top = el.scrollTop;
+    if (top < setHeight * 0.5) {
       el.scrollTop = top + setHeight;
-      loopingRef.current = false;
-    } else if (top >= setHeight * 2) {
-      loopingRef.current = true;
+    } else if (top >= setHeight * 2.5) {
       el.scrollTop = top - setHeight;
-      loopingRef.current = false;
+    } else if (top < setHeight) {
+      el.scrollTop = top + setHeight;
+    } else if (top >= setHeight * 2) {
+      el.scrollTop = top - setHeight;
     }
-  }, [setHeight]);
+  }, [infinite, setHeight]);
 
   const scrollByStep = useCallback(
     (direction: 1 | -1) => {
@@ -194,84 +198,59 @@ function GalleryThumbnails({
       window.setTimeout(() => {
         normalizeLoop();
         wheelLockRef.current = false;
-      }, 280);
+      }, 320);
     },
     [stepSize, normalizeLoop],
   );
 
   useEffect(() => {
     const el = listRef.current;
-    if (!el || !infinite || setHeight == null) {
-      initializedRef.current = false;
-      return;
-    }
+    if (!el || !infinite || setHeight == null) return;
+
+    const initKey = `${slides.length}:${Math.round(setHeight)}`;
+    if (initKeyRef.current === initKey) return;
+    initKeyRef.current = initKey;
     el.scrollTop = setHeight;
-    initializedRef.current = true;
   }, [infinite, setHeight, slides.length]);
 
   useEffect(() => {
+    const root = rootRef.current;
     const el = listRef.current;
-    if (!el || !snapMode) return;
-
-    let scrollEndTimer = 0;
-    const onScroll = () => {
-      if (loopingRef.current) return;
-      window.clearTimeout(scrollEndTimer);
-      scrollEndTimer = window.setTimeout(() => {
-        if (wheelLockRef.current) return;
-        if (stepSize == null || stepSize <= 0) return;
-        const snapped = Math.round(el.scrollTop / stepSize) * stepSize;
-        if (Math.abs(snapped - el.scrollTop) > 1) {
-          el.scrollTo({ top: snapped, behavior: "smooth" });
-          window.setTimeout(normalizeLoop, 280);
-        } else {
-          normalizeLoop();
-        }
-      }, 80);
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      window.clearTimeout(scrollEndTimer);
-    };
-  }, [snapMode, stepSize, normalizeLoop]);
-
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el || !snapMode || stepSize == null || stepSize <= 0) return;
+    if (!root || !el || !snapMode || stepSize == null || stepSize <= 0) return;
 
     const onWheel = (event: WheelEvent) => {
-      if (Math.abs(event.deltaY) < 0.5) return;
+      if (Math.abs(event.deltaY) < 0.5 && Math.abs(event.deltaX) < 0.5) return;
       event.preventDefault();
       event.stopPropagation();
-      scrollByStep(event.deltaY > 0 ? 1 : -1);
+      const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX)
+        ? event.deltaY
+        : event.deltaX;
+      scrollByStep(delta > 0 ? 1 : -1);
     };
 
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    root.addEventListener("wheel", onWheel, { passive: false });
+    return () => root.removeEventListener("wheel", onWheel);
   }, [snapMode, stepSize, scrollByStep]);
 
   if (slides.length <= 1) return null;
 
   const viewportStyle: CSSProperties | undefined = snapMode
     ? {
-        height: viewportHeight,
+        height: roundedViewport ?? undefined,
         width: thumbWidth ?? undefined,
       }
     : style;
 
   return (
     <div
+      ref={rootRef}
       className={`flex shrink-0 flex-col items-center ${thumbListClassName}`}
       style={snapMode ? { width: thumbWidth ?? undefined } : style}
     >
       <div className="w-full overflow-hidden" style={viewportStyle}>
         <div
           ref={listRef}
-          className={`flex h-full max-h-full flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
-            snapMode ? "snap-y snap-mandatory gap-3" : "gap-3"
-          }`}
+          className="flex h-full max-h-full flex-col gap-3 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {loopSlides.map((slide, index) => {
             const realIndex = index % slides.length;
@@ -287,7 +266,7 @@ function GalleryThumbnails({
                 }
                 aria-pressed={activeIndex === realIndex}
                 className={`relative shrink-0 overflow-hidden transition-opacity hover:opacity-80 ${
-                  snapMode ? "snap-start rounded-2xl" : thumbClassName
+                  snapMode ? "rounded-2xl" : thumbClassName
                 }`}
                 style={
                   snapMode && thumbHeight != null
@@ -751,7 +730,10 @@ function GalleryLayout({
     mainObserverRef.current = null;
     if (!node) return;
 
-    const update = () => setThumbsHeight(node.getBoundingClientRect().height);
+    const update = () => {
+      const next = Math.round(node.getBoundingClientRect().height);
+      setThumbsHeight((prev) => (prev === next ? prev : next));
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(node);
