@@ -21,22 +21,34 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductDetails(slug, { includeOutOfStock: true });
-  if (!product) return {};
+  try {
+    const product = await getProductDetails(slug, { includeOutOfStock: true });
+    if (!product) return {};
 
-  const canonicalSlug = product.slug;
+    const canonicalSlug = product.slug;
 
-  return buildPageMetadata({
-    title: `${product.name} — купить в Синоним`,
-    description: buildProductMetaDescription(product),
-    path: `/products/${canonicalSlug}`,
-    ogImage: product.images[0] ?? product.image,
-  });
+    return buildPageMetadata({
+      title: `${product.name} — купить в Синоним`,
+      description: buildProductMetaDescription(product),
+      path: `/products/${canonicalSlug}`,
+      ogImage: product.images[0] ?? product.image,
+    });
+  } catch (error) {
+    console.error(`Product metadata failed for "${slug}":`, error);
+    return {};
+  }
 }
 
 export default async function ProductRoute({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductDetails(slug, { includeOutOfStock: true });
+
+  let product;
+  try {
+    product = await getProductDetails(slug, { includeOutOfStock: true });
+  } catch (error) {
+    console.error(`Product page failed for "${slug}":`, error);
+    notFound();
+  }
 
   if (!product) {
     notFound();
@@ -47,8 +59,14 @@ export default async function ProductRoute({ params }: PageProps) {
   }
 
   const [relatedProducts, complectProducts] = await Promise.all([
-    getRelatedProducts(product),
-    getComplectProducts(product),
+    getRelatedProducts(product).catch((error) => {
+      console.error("Related products unavailable:", error);
+      return [];
+    }),
+    getComplectProducts(product).catch((error) => {
+      console.error("Complect products unavailable:", error);
+      return [];
+    }),
   ]);
 
   return (

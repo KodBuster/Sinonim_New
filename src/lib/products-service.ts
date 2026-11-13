@@ -111,18 +111,30 @@ export async function getCatalogProducts(options?: {
   return products;
 }
 
+async function getAdvantShopProductList(options?: {
+  includeOutOfStock?: boolean;
+}): Promise<Product[]> {
+  if (options?.includeOutOfStock && isAdvantShopConfigured()) {
+    try {
+      return await fetchAdvantShopProducts({ includeOutOfStock: true });
+    } catch (error) {
+      console.error(
+        "AdvantShop out-of-stock catalog unavailable, falling back:",
+        error,
+      );
+    }
+  }
+
+  return getCatalogProducts();
+}
+
 export async function getProductBySlug(
   slug: string,
   options?: { includeOutOfStock?: boolean },
 ): Promise<Product | undefined> {
-  if (isAdvantShopConfigured()) {
-    const products = options?.includeOutOfStock
-      ? await fetchAdvantShopProducts({ includeOutOfStock: true })
-      : await getCatalogProducts();
-    const fromShop = findProductBySlug(products, slug);
-    if (fromShop) return fromShop;
-  }
-
+  const products = await getAdvantShopProductList(options);
+  const fromShop = findProductBySlug(products, slug);
+  if (fromShop) return fromShop;
   return getStaticProductBySlug(slug);
 }
 
@@ -130,20 +142,35 @@ export async function getProductDetails(
   slug: string,
   options?: { includeOutOfStock?: boolean },
 ): Promise<ProductDetails | undefined> {
-  if (isAdvantShopConfigured()) {
-    const products = options?.includeOutOfStock
-      ? await fetchAdvantShopProducts({ includeOutOfStock: true })
-      : await getCatalogProducts();
-    const summary = findProductBySlug(products, slug);
+  const products = await getAdvantShopProductList(options);
+  const summary = findProductBySlug(products, slug);
 
-    if (summary) {
-      try {
-        const product = await loadAdvantShopProductDetails(summary);
-        if (product) return product;
-      } catch (error) {
-        console.error(`AdvantShop product "${slug}" unavailable:`, error);
-      }
+  if (summary) {
+    try {
+      const product = await loadAdvantShopProductDetails(summary);
+      if (product) return product;
+    } catch (error) {
+      console.error(`AdvantShop product "${slug}" unavailable:`, error);
     }
+
+    // Catalog summary is enough to render the card if details API fails.
+    return {
+      ...summary,
+      description: summary.description ?? "",
+      images: summary.images?.length ? summary.images : [summary.image],
+      color: summary.color ?? "",
+      clarity: summary.clarity ?? "",
+      cut: summary.cut ?? "",
+      metal: summary.metal ?? "Серебро 925",
+      sizeOptions: summary.sizeOptions ?? [],
+      stoneVariants: [
+        {
+          weight: summary.stoneWeight,
+          label: String(summary.stoneWeight),
+          price: summary.price,
+        },
+      ],
+    };
   }
 
   return getStaticProductDetails(slug);

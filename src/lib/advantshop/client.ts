@@ -54,6 +54,22 @@ async function fetchWithTimeout(
   }
 }
 
+function isConnectTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  if (
+    message.includes("connect timeout") ||
+    message.includes("connecttimeout")
+  ) {
+    return true;
+  }
+  const cause = error.cause;
+  if (cause && typeof cause === "object" && "code" in cause) {
+    return String(cause.code) === "UND_ERR_CONNECT_TIMEOUT";
+  }
+  return false;
+}
+
 async function fetchWithRetry(
   url: string,
   options: RequestInit,
@@ -66,6 +82,10 @@ async function fetchWithRetry(
       return await fetchWithTimeout(url, options);
     } catch (error) {
       lastError = error;
+      // Host unreachable — retries only waste time before catalog fallback.
+      if (isConnectTimeoutError(error)) {
+        throw error;
+      }
       const retryable = isRetryableFetchError(error);
       if (!retryable || attempt === attempts) {
         throw error;

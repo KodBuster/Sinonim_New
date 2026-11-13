@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /** Temporary Missoma PDP placeholders — replace with own videos later. */
 const PLACEHOLDER_VIDEOS = [
@@ -12,9 +13,79 @@ const PLACEHOLDER_VIDEOS = [
   "https://cdn.shopify.com/videos/c/vp/94930e95e05642349e5966520c0227e7/94930e95e05642349e5966520c0227e7.SD-480p-1.5Mbps-90102050.mp4",
 ] as const;
 
+function PlayIcon({ className = "size-8" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M8 5.5v13l11-6.5L8 5.5Z" />
+    </svg>
+  );
+}
+
+function InspiredVideoModal({
+  src,
+  onClose,
+}: {
+  src: string;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Просмотр видео"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-black shadow-2xl"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Закрыть"
+          className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-olive-dark transition-opacity hover:opacity-80"
+        >
+          <span className="text-xl leading-none">×</span>
+        </button>
+        <video
+          src={src}
+          className="aspect-[9/16] max-h-[min(85vh,720px)] w-full object-contain"
+          controls
+          autoPlay
+          playsInline
+          preload="auto"
+        />
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function ProductInspiredSection() {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollMore, setCanScrollMore] = useState(false);
+  const [activeSrc, setActiveSrc] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const updateScrollState = () => {
     const el = scrollerRef.current;
@@ -55,22 +126,28 @@ export function ProductInspiredSection() {
           className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {PLACEHOLDER_VIDEOS.map((src, index) => (
-            <div
+            <button
               key={src}
+              type="button"
               data-inspired-card
-              className="relative aspect-[9/16] w-[42%] max-w-[168px] shrink-0 overflow-hidden rounded-2xl bg-[#f5f4f1] sm:w-[38%] sm:max-w-[180px]"
+              onClick={() => setActiveSrc(src)}
+              aria-label={`Смотреть видео ${index + 1}`}
+              className="relative aspect-[9/16] w-[calc((100%-2.25rem)/3.5)] shrink-0 overflow-hidden rounded-2xl bg-[#f5f4f1] text-left transition-opacity hover:opacity-90"
             >
               <video
                 src={src}
-                className="h-full w-full object-cover"
+                className="pointer-events-none h-full w-full object-cover"
                 muted
-                loop
                 playsInline
-                autoPlay
                 preload="metadata"
-                aria-label={`Вдохновение ${index + 1}`}
+                aria-hidden
               />
-            </div>
+              <span className="absolute inset-0 flex items-center justify-center bg-black/15">
+                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-brand-olive-dark shadow-sm">
+                  <PlayIcon className="size-5 translate-x-px" />
+                </span>
+              </span>
+            </button>
           ))}
         </div>
 
@@ -93,6 +170,10 @@ export function ProductInspiredSection() {
           </button>
         ) : null}
       </div>
+
+      {mounted && activeSrc ? (
+        <InspiredVideoModal src={activeSrc} onClose={() => setActiveSrc(null)} />
+      ) : null}
     </div>
   );
 }
