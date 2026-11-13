@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
         pathname: "/images/**",
       },
       {
+        pathname: "/redesign/**",
+      },
+      {
         pathname: "/api/advantshop-image",
       },
     ],

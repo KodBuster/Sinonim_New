@@ -1,18 +1,10 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { CartLink } from "@/components/cart/CartLink";
 import { FavoritesLink } from "@/components/favorites/FavoritesLink";
-import { MetrikaPhoneLink } from "@/components/analytics/MetrikaPhoneLink";
-import { SearchForm } from "@/components/search/SearchForm";
-import {
-  SITE_EMAIL,
-  SITE_EMAIL_MAILTO,
-  SITE_PHONE,
-  SITE_PHONE_TEL,
-} from "@/lib/contacts";
 
 const NAV_ITEMS = [
   { label: "Новая коллекция", href: "/collections/fw-2026" },
@@ -50,106 +42,12 @@ function IconMenu() {
   );
 }
 
-function MobileSearchLink({ className = "" }: { className?: string }) {
-  return (
-    <Link
-      href="/search"
-      className={`${iconButtonClass} ${className || "p-2 sm:p-2.5"}`}
-      aria-label="Поиск"
-    >
-      <IconSearch />
-    </Link>
-  );
-}
+type HeaderProps = {
+  /** When true, header overlays content (homepage hero) without a spacer. */
+  overlay?: boolean;
+};
 
-function DesktopSearchToggle({
-  searchOpen,
-  onSearchToggle,
-}: {
-  searchOpen: boolean;
-  onSearchToggle: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className={`${iconButtonClass} p-2 sm:p-2.5`}
-      aria-label={searchOpen ? "Закрыть поиск" : "Поиск"}
-      aria-expanded={searchOpen}
-      aria-controls="header-search"
-      onClick={onSearchToggle}
-    >
-      <IconSearch />
-    </button>
-  );
-}
-
-function HeaderActions({
-  searchOpen,
-  onSearchToggle,
-}: {
-  searchOpen: boolean;
-  onSearchToggle: () => void;
-}) {
-  return (
-    <>
-      <DesktopSearchToggle
-        searchOpen={searchOpen}
-        onSearchToggle={onSearchToggle}
-      />
-      <FavoritesLink />
-      <CartLink />
-    </>
-  );
-}
-
-function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <Link
-      href="/"
-      className={`relative z-0 flex flex-col group shrink-0 ${
-        compact ? "items-center" : "items-center md:items-start"
-      }`}
-    >
-      <Image
-        src="/images/logo_20260527190756.png"
-        alt="Синоним"
-        width={1000}
-        height={150}
-        priority
-        className={`logo-header-olive block max-w-none object-contain ${
-          compact ? "h-6 w-32 sm:h-7 sm:w-36" : "h-9 w-44 md:h-10 md:w-52"
-        }`}
-      />
-      {!compact && (
-        <span className="hidden sm:block text-[10px] md:text-xs text-brand-muted tracking-wide mt-1 text-center md:text-left">
-          ограненные синтетические алмазы в серебре
-        </span>
-      )}
-    </Link>
-  );
-}
-
-export function Header() {
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  useEffect(() => {
-    if (!searchOpen) return;
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSearchOpen(false);
-    };
-
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [searchOpen]);
-
-  const toggleDesktopSearch = useCallback(() => {
-    setSearchOpen((open) => !open);
-  }, []);
-
+export function Header({ overlay = false }: HeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
@@ -170,105 +68,74 @@ export function Header() {
       observer.disconnect();
       document.documentElement.style.removeProperty("--site-header-height");
     };
-  }, [searchOpen]);
+  }, []);
 
   return (
-    <header
-      ref={headerRef}
-      className="sticky top-0 z-[100] border-b border-brand-terracotta bg-brand-surface"
-    >
-      {/* Same width as desktop hero banner so edges align */}
-      <div className="relative mx-auto max-w-[1664px] px-4 md:px-6 lg:px-10">
-        <div className="hidden md:flex justify-between items-center py-2 text-xs text-brand-muted border-b border-brand-sand">
-          <div className="flex gap-6">
-            <Link href="/shipping" className="hover:text-brand-terracotta transition-colors">
-              Доставка и оплата
-            </Link>
-            <Link href="/showroom" className="hover:text-brand-terracotta transition-colors">
-              Шоурум
-            </Link>
-            <Link href="/cooperation" className="hover:text-brand-terracotta transition-colors">
-              Сотрудничество
-            </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <a
-              href={SITE_EMAIL_MAILTO}
-              className="hover:text-brand-terracotta transition-colors"
-            >
-              {SITE_EMAIL}
-            </a>
-            <MetrikaPhoneLink
-              href={SITE_PHONE_TEL}
-              className="hover:text-brand-terracotta transition-colors"
-            >
-              {SITE_PHONE}
-            </MetrikaPhoneLink>
-          </div>
-        </div>
-
-        <div className="py-1 md:py-3 lg:py-4">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center -mx-4 px-0 md:-mx-6 lg:mx-0 lg:hidden">
-            <div className="relative z-[2] flex items-center justify-start min-w-0">
-              <Link
-                href="/menu"
-                className={`${iconButtonClass} py-2 pl-3 pr-0.5 shrink-0`}
-                aria-label="Открыть меню"
-              >
-                <IconMenu />
-              </Link>
-              <MobileSearchLink className="py-2 px-0.5" />
-            </div>
-
-            <div className="relative z-0 flex justify-center px-2 sm:px-3">
-              <Logo compact />
-            </div>
-
-            <div className="relative z-[2] flex items-center justify-end min-w-0">
-              <FavoritesLink className="touch-manipulation py-2 pl-2 pr-0.5" />
-              <CartLink className="touch-manipulation py-2 pl-0.5 pr-3" />
-            </div>
-          </div>
-
-          <div className="hidden lg:flex items-center justify-between gap-4">
-            <Logo />
-
-            <nav className="flex items-center gap-8">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className="text-base uppercase tracking-wide text-brand-text hover:text-brand-terracotta transition-colors"
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <HeaderActions
-                searchOpen={searchOpen}
-                onSearchToggle={toggleDesktopSearch}
-              />
-            </div>
-          </div>
-        </div>
-
-        {searchOpen && (
-          <div
-            id="header-search"
-            className="relative z-[2] hidden lg:block lg:absolute lg:left-0 lg:right-0 lg:top-full lg:border-b lg:border-brand-olive/10 lg:bg-brand-surface lg:px-10 lg:py-4 lg:shadow-sm"
+    <>
+      <header
+        ref={headerRef}
+        className="group/header fixed inset-x-0 top-0 z-[100] border-b border-transparent bg-white/20 backdrop-blur-[8px] transition-[background-color,border-color,backdrop-filter] duration-200 hover:border-[var(--color-brand-sand,#e8e8e8)] hover:bg-white hover:backdrop-blur-none"
+      >
+        <div className="flex h-[60px] items-center gap-0 px-2.5 md:h-[66px] md:px-4 lg:px-5">
+          <Link
+            href="/menu"
+            className={`${iconButtonClass} mr-1.5 shrink-0 p-2 lg:hidden`}
+            aria-label="Открыть меню"
           >
-            <div className="mx-auto max-w-xl lg:max-w-2xl">
-              <SearchForm
-                autoFocus
-                compact
-                onSubmit={() => setSearchOpen(false)}
-              />
-            </div>
+            <IconMenu />
+          </Link>
+
+          <Link
+            href="/"
+            className="mr-8 shrink-0 md:mr-10 lg:mr-14 xl:mr-16"
+            aria-label="СИНОНИМ — главная"
+          >
+            <Image
+              src="/redesign/synonym-logo.png"
+              alt="СИНОНИМ"
+              width={380}
+              height={64}
+              priority
+              className="h-8 w-auto max-w-[190px] object-contain sm:h-9 md:h-10"
+            />
+          </Link>
+
+          <nav
+            className="hidden min-w-0 flex-1 items-center justify-start gap-x-3 overflow-x-auto lg:flex xl:gap-x-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label="Главная навигация"
+          >
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="shrink-0 whitespace-nowrap border-b-2 border-transparent py-2 text-[11px] font-medium uppercase tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-terracotta hover:text-brand-olive-logo xl:text-xs"
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <Link
+              href="/search"
+              className={`${iconButtonClass} p-2 sm:p-2.5`}
+              aria-label="Поиск по каталогу"
+            >
+              <IconSearch />
+            </Link>
+            <FavoritesLink className="touch-manipulation p-2 sm:p-2.5" />
+            <CartLink className="touch-manipulation p-2 sm:p-2.5" />
           </div>
-        )}
-      </div>
-    </header>
+        </div>
+      </header>
+
+      {!overlay ? (
+        <div
+          aria-hidden
+          className="shrink-0"
+          style={{ height: "var(--site-header-height, 66px)" }}
+        />
+      ) : null}
+    </>
   );
 }

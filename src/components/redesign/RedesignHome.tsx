@@ -7,10 +7,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
-import { useCart } from "@/context/CartContext";
-import { useFavorites } from "@/context/FavoritesContext";
+import { Header } from "@/components/Header";
 import {
   ASSET,
   BESTSELLER_ORDER,
@@ -99,9 +97,6 @@ function SectionHead({
 export function RedesignHome() {
   useRedesignStyles();
 
-  const { count: cartCount, isReady: cartReady } = useCart();
-  const { count: favCount, isReady: favReady } = useFavorites();
-
   const [slide, setSlide] = useState(0);
   const [featuredTab, setFeaturedTab] = useState<(typeof FEATURED_TABS)[number]["id"]>("all");
   const [quickView, setQuickView] = useState<RedesignProduct | null>(null);
@@ -162,55 +157,7 @@ export function RedesignHome() {
 
   return (
     <div className="synonym-redesign-root" style={{ minHeight: "100vh", background: "#fff" }}>
-      <header className="site-header">
-        <div className="header-core wrap">
-          <Link href="/menu" className="icon-btn mobile-menu" aria-label="Открыть меню">
-            ☰
-          </Link>
-          <Link href="/" className="brand" aria-label="СИНОНИМ — главная">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={`${ASSET}/synonym-logo.png`} alt="СИНОНИМ" />
-          </Link>
-          <nav className="header-navigation" aria-label="Главная навигация">
-            {NAV.map((item) => (
-              <Link key={item.href + item.label} href={item.href}>
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-          <div className="header-tools">
-            <Link href="/search" className="icon-btn" aria-label="Поиск по каталогу">
-              ⌕
-            </Link>
-            <Link href="/favorites" className="icon-btn" aria-label="Избранное">
-              ♡
-              <span
-                data-counter="favorites"
-                style={
-                  {
-                    display: favReady && favCount > 0 ? "grid" : "none",
-                  } as CSSProperties
-                }
-              >
-                {favCount || ""}
-              </span>
-            </Link>
-            <Link href="/cart" className="icon-btn" aria-label="Корзина">
-              ♧
-              <span
-                data-counter="cart"
-                style={
-                  {
-                    display: cartReady && cartCount > 0 ? "grid" : "none",
-                  } as CSSProperties
-                }
-              >
-                {cartCount || ""}
-              </span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header overlay />
 
       <main>
         <section className="hero" data-home-block="1" aria-label="Три истории SYNONYM">

@@ -7,14 +7,20 @@ function IconCart() {
   return (
     <svg className="size-6 lg:size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
-        d="M6 6h15l-1.5 9h-12L6 6Z"
+        d="M3 4h1.8l1.1 2.2L7.8 14h10.4l2-7.2H6.4"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M7.8 14h10.4l.9 3.2H7.2L7.8 14Z"
         stroke="currentColor"
         strokeWidth="1.5"
         strokeLinejoin="round"
       />
-      <path d="M6 6 5 3H2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="9" cy="20" r="1" fill="currentColor" />
-      <circle cx="18" cy="20" r="1" fill="currentColor" />
+      <circle cx="9.5" cy="19.5" r="1.25" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="16.5" cy="19.5" r="1.25" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
