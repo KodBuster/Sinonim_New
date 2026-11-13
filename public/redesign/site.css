@@ -437,3 +437,111 @@ body.synonym-redesign-active .messenger-fab,
 body.synonym-redesign-active [data-messenger-fab] {
   /* keep FAB usable; no hide */
 }
+
+/* Fixed translucent header over hero — one row: logo | nav | tools */
+.synonym-redesign-root .site-header {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  z-index: 80;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border-bottom: 1px solid transparent !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition:
+    background 0.22s ease,
+    border-color 0.22s ease,
+    backdrop-filter 0.22s ease;
+}
+.synonym-redesign-root .site-header:hover {
+  background: #fff !important;
+  border-bottom-color: var(--line) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.synonym-redesign-root .site-header > .header-core.wrap {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding-left: clamp(10px, 1.2vw, 20px);
+  padding-right: clamp(10px, 1.2vw, 20px);
+  height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  position: relative;
+}
+.synonym-redesign-root .brand {
+  flex-shrink: 0;
+  padding: 6px 0;
+  min-height: 0;
+  margin-right: clamp(36px, 4.5vw, 72px);
+}
+.synonym-redesign-root .brand img {
+  width: clamp(140px, 12vw, 190px);
+  max-height: 40px;
+}
+.synonym-redesign-root .header-navigation {
+  flex: 0 1 auto;
+  height: auto;
+  min-width: 0;
+  border-top: none !important;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: clamp(10px, 1.5vw, 28px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.synonym-redesign-root .header-navigation::-webkit-scrollbar {
+  display: none;
+}
+.synonym-redesign-root .header-navigation a {
+  line-height: 1.2;
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+}
+.synonym-redesign-root .header-tools {
+  position: static !important;
+  top: auto;
+  right: auto;
+  transform: none !important;
+  flex-shrink: 0;
+  margin-left: auto;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.synonym-redesign-root .mobile-menu {
+  position: static !important;
+  top: auto;
+  left: auto;
+  transform: none !important;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+/* Hero starts under fixed header */
+.synonym-redesign-root .hero {
+  margin-top: 0 !important;
+}
+.synonym-redesign-root .hero-copy {
+  padding-top: calc(66px + 40px);
+}
+@media (max-width: 960px) {
+  .synonym-redesign-root .header-navigation {
+    display: none;
+  }
+  .synonym-redesign-root .site-header > .header-core.wrap {
+    height: 60px;
+  }
+  .synonym-redesign-root .brand {
+    margin-right: 0;
+  }
+  .synonym-redesign-root .hero-copy {
+    padding-top: calc(60px + 36px);
+  }
+}

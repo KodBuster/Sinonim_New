@@ -18,13 +18,13 @@ export function ProductImage({
   fallbackSrc = FALLBACK_IMAGE,
   ...props
 }: ProductImageProps) {
-  const resolvedSrc = resolveProductImageUrl(src);
+  const resolvedSrc = resolveProductImageUrl(src || "") || fallbackSrc;
   const [currentSrc, setCurrentSrc] = useState(resolvedSrc);
   const isProxied = currentSrc.startsWith("/api/advantshop-image");
 
   useEffect(() => {
-    setCurrentSrc(resolveProductImageUrl(src));
-  }, [src]);
+    setCurrentSrc(resolveProductImageUrl(src || "") || fallbackSrc);
+  }, [src, fallbackSrc]);
 
   return (
     <Image

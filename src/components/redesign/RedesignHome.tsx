@@ -37,9 +37,9 @@ function useRedesignStyles() {
       link = document.createElement("link");
       link.id = id;
       link.rel = "stylesheet";
-      link.href = "/redesign/site.css";
       document.head.appendChild(link);
     }
+    link.href = "/redesign/site.css?v=header-fixed-1";
     document.documentElement.classList.add("synonym-redesign-active");
     document.body.classList.add("synonym-redesign-active");
     return () => {
@@ -171,6 +171,13 @@ export function RedesignHome() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`${ASSET}/synonym-logo.png`} alt="СИНОНИМ" />
           </Link>
+          <nav className="header-navigation" aria-label="Главная навигация">
+            {NAV.map((item) => (
+              <Link key={item.href + item.label} href={item.href}>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
           <div className="header-tools">
             <Link href="/search" className="icon-btn" aria-label="Поиск по каталогу">
               ⌕
@@ -203,13 +210,6 @@ export function RedesignHome() {
             </Link>
           </div>
         </div>
-        <nav className="header-navigation wrap" aria-label="Главная навигация">
-          {NAV.map((item) => (
-            <Link key={item.href + item.label} href={item.href}>
-              {item.label}
-            </Link>
-          ))}
-        </nav>
       </header>
 
       <main>

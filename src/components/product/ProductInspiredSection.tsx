@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ProductImage } from "@/components/catalog/ProductImage";
+import { formatPrice } from "@/lib/products";
+import { useProductSelection } from "./ProductSelectionContext";
 
 /** Temporary Missoma PDP placeholders — replace with own videos later. */
 const PLACEHOLDER_VIDEOS = [
@@ -13,75 +16,353 @@ const PLACEHOLDER_VIDEOS = [
   "https://cdn.shopify.com/videos/c/vp/94930e95e05642349e5966520c0227e7/94930e95e05642349e5966520c0227e7.SD-480p-1.5Mbps-90102050.mp4",
 ] as const;
 
-function PlayIcon({ className = "size-8" }: { className?: string }) {
+const PRODUCT_CARD_DELAY_MS = 1000;
+
+type InspiredProduct = {
+  name: string;
+  image: string;
+  price: number;
+};
+
+function IconMute({ muted }: { muted: boolean }) {
+  if (muted) {
+    return (
+      <svg className="size-[22px]" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <path
+          d="M11 5 6 9H3v6h3l5 4V5Z"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        <path
+          d="m16 9.5 4 4m0-4-4 4"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </svg>
+    );
+  }
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M8 5.5v13l11-6.5L8 5.5Z" />
+    <svg className="size-[22px]" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M11 5 6 9H3v6h3l5 4V5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
 
 function InspiredVideoModal({
-  src,
+  videos,
+  startIndex,
+  product,
   onClose,
 }: {
-  src: string;
+  videos: readonly string[];
+  startIndex: number;
+  product: InspiredProduct;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const scrollingTo = useRef<number | null>(null);
+  const [index, setIndex] = useState(startIndex);
+  const [showProductCard, setShowProductCard] = useState(false);
+  const [muted, setMuted] = useState(true);
 
+  const scrollToIndex = useCallback(
+    (next: number, behavior: ScrollBehavior = "smooth") => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const clamped = ((next % videos.length) + videos.length) % videos.length;
+      scrollingTo.current = clamped;
+      setIndex(clamped);
+      el.scrollTo({ top: clamped * el.clientHeight, behavior });
+      window.setTimeout(() => {
+        if (scrollingTo.current === clamped) scrollingTo.current = null;
+      }, behavior === "smooth" ? 520 : 0);
+    },
+    [videos.length],
+  );
+
+  const goPrev = useCallback(() => {
+    const next = (index - 1 + videos.length) % videos.length;
+    const wraps = index === 0 && next === videos.length - 1;
+    scrollToIndex(next, wraps ? "auto" : "smooth");
+  }, [index, videos.length, scrollToIndex]);
+
+  const goNext = useCallback(() => {
+    const next = (index + 1) % videos.length;
+    const wraps = index === videos.length - 1 && next === 0;
+    scrollToIndex(next, wraps ? "auto" : "smooth");
+  }, [index, videos.length, scrollToIndex]);
+
+  // Jump to startIndex once mounted
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: startIndex * el.clientHeight, behavior: "auto" });
+  }, [startIndex]);
+
+  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        goPrev();
+        return;
+      }
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        goNext();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose, goPrev, goNext]);
 
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
+  useEffect(() => {
+    setShowProductCard(false);
+    const timer = window.setTimeout(() => {
+      setShowProductCard(true);
+    }, PRODUCT_CARD_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [index]);
+
+  // Sync active video playback + mute
+  useEffect(() => {
+    videoRefs.current.forEach((video, i) => {
+      if (!video) return;
+      video.muted = muted;
+      if (i === index) {
+        void video.play().catch(() => {
+          if (!video.muted) {
+            video.muted = true;
+            setMuted(true);
+            void video.play().catch(() => {});
+          }
+        });
+      } else {
+        video.pause();
+        try {
+          video.currentTime = 0;
+        } catch {
+          // ignore seek errors while loading
+        }
+      }
+    });
+  }, [index, muted]);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+
+    const updateFromScroll = () => {
+      if (scrollingTo.current != null) return;
+      const height = el.clientHeight || 1;
+      const next = Math.round(el.scrollTop / height);
+      if (next >= 0 && next < videos.length && next !== index) {
+        setIndex(next);
+      }
     };
-  }, [onClose]);
+
+    el.addEventListener("scroll", updateFromScroll, { passive: true });
+    return () => el.removeEventListener("scroll", updateFromScroll);
+  }, [index, videos.length]);
+
+  const handleEnded = useCallback(() => {
+    goNext();
+  }, [goNext]);
+
+  const handleBuy = () => {
+    onClose();
+    window.requestAnimationFrame(() => {
+      const button = document.querySelector<HTMLButtonElement>("[data-add-to-cart]");
+      button?.scrollIntoView({ behavior: "smooth", block: "center" });
+      button?.focus();
+    });
+  };
+
+  const toggleMute = () => {
+    const next = !muted;
+    setMuted(next);
+    const video = videoRefs.current[index];
+    if (video) {
+      video.muted = next;
+      if (!next) {
+        void video.play().catch(() => {
+          video.muted = true;
+          setMuted(true);
+        });
+      }
+    }
+  };
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4"
+      className="pointer-events-none fixed inset-0 z-[80]"
       role="dialog"
       aria-modal="true"
       aria-label="Просмотр видео"
-      onClick={onClose}
     >
       <div
-        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-black shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
+        className="pointer-events-auto absolute top-[calc(var(--site-header-height,4rem)+0.75rem)] right-3 overflow-hidden rounded-2xl bg-black shadow-[0_12px_40px_rgba(0,0,0,0.28)] sm:right-4 md:right-6"
+        style={{
+          height: "calc(100dvh - var(--site-header-height, 4rem) - 1.5rem)",
+          width:
+            "min(100vw - 1.5rem, calc((100dvh - var(--site-header-height, 4rem) - 1.5rem) * 9 / 16))",
+          maxHeight: "calc(100dvh - var(--site-header-height, 4rem) - 1.5rem)",
+        }}
       >
+        <div
+          ref={scrollerRef}
+          className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {videos.map((src, i) => (
+            <div
+              key={src}
+              className="relative h-full w-full shrink-0 snap-start snap-always"
+            >
+              <video
+                ref={(node) => {
+                  videoRefs.current[i] = node;
+                }}
+                src={src}
+                className="h-full w-full object-cover"
+                muted={muted}
+                playsInline
+                preload={Math.abs(i - index) <= 1 ? "auto" : "metadata"}
+                controls={false}
+                disablePictureInPicture
+                controlsList="nodownload nofullscreen noremoteplayback"
+                onEnded={i === index ? handleEnded : undefined}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Close — top left, dark circle */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Закрыть"
-          className="absolute top-3 right-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-olive-dark transition-opacity hover:opacity-80"
+          className="absolute top-3.5 left-3.5 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/55"
         >
-          <span className="text-xl leading-none">×</span>
+          <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M18 6 6 18M6 6l12 12"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
         </button>
-        <video
-          src={src}
-          className="aspect-[9/16] max-h-[min(85vh,720px)] w-full object-contain"
-          controls
-          autoPlay
-          playsInline
-          preload="auto"
-        />
+
+        {/* Vertical nav — right center, stacked circles */}
+        <div className="absolute top-1/2 right-3 z-20 flex -translate-y-1/2 flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={goPrev}
+            aria-label="Предыдущее видео"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white/90 transition-opacity hover:bg-black/50 hover:text-white"
+          >
+            <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M6 14.5 12 8.5l6 6"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            aria-label="Следующее видео"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-black/35 text-white/90 transition-opacity hover:bg-black/50 hover:text-white"
+          >
+            <svg className="size-5" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M6 9.5l6 6 6-6"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Mute — top right, icon only */}
+        <button
+          type="button"
+          onClick={toggleMute}
+          aria-label={muted ? "Включить звук" : "Выключить звук"}
+          className="absolute top-3.5 right-3.5 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/55"
+        >
+          <IconMute muted={muted} />
+        </button>
+
+        {showProductCard ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-black/45 px-3 py-3 backdrop-blur-[2px] sm:px-3.5 sm:py-3.5">
+            <div className="pointer-events-auto flex items-center gap-3">
+              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-white sm:h-16 sm:w-16">
+                <ProductImage
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-contain"
+                  sizes="64px"
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="line-clamp-2 text-sm leading-snug text-white">
+                  {product.name}
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-white">
+                  {formatPrice(product.price)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleBuy}
+                className="shrink-0 rounded-md bg-white px-3.5 py-2 text-xs font-medium tracking-wide text-brand-olive-dark transition-opacity hover:opacity-90 sm:text-sm"
+              >
+                Купить
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>,
     document.body,
   );
 }
 
-export function ProductInspiredSection() {
+export function ProductInspiredSection({
+  product,
+}: {
+  product: InspiredProduct;
+}) {
+  const { price } = useProductSelection();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [canScrollMore, setCanScrollMore] = useState(false);
-  const [activeSrc, setActiveSrc] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
+  const cardProduct = { ...product, price };
 
   useEffect(() => {
     setMounted(true);
@@ -130,7 +411,7 @@ export function ProductInspiredSection() {
               key={src}
               type="button"
               data-inspired-card
-              onClick={() => setActiveSrc(src)}
+              onClick={() => setActiveIndex(index)}
               aria-label={`Смотреть видео ${index + 1}`}
               className="relative aspect-[9/16] w-[calc((100%-2.25rem)/3.5)] shrink-0 overflow-hidden rounded-2xl bg-[#f5f4f1] text-left transition-opacity hover:opacity-90"
             >
@@ -142,11 +423,6 @@ export function ProductInspiredSection() {
                 preload="metadata"
                 aria-hidden
               />
-              <span className="absolute inset-0 flex items-center justify-center bg-black/15">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 text-brand-olive-dark shadow-sm">
-                  <PlayIcon className="size-5 translate-x-px" />
-                </span>
-              </span>
             </button>
           ))}
         </div>
@@ -171,8 +447,13 @@ export function ProductInspiredSection() {
         ) : null}
       </div>
 
-      {mounted && activeSrc ? (
-        <InspiredVideoModal src={activeSrc} onClose={() => setActiveSrc(null)} />
+      {mounted && activeIndex != null ? (
+        <InspiredVideoModal
+          videos={PLACEHOLDER_VIDEOS}
+          startIndex={activeIndex}
+          product={cardProduct}
+          onClose={() => setActiveIndex(null)}
+        />
       ) : null}
     </div>
   );

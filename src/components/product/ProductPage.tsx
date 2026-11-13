@@ -121,7 +121,16 @@ export function ProductPage({
                 {complectProducts.length > 0 && product.setArtNos?.length ? (
                   <ProductComplectSection products={complectProducts} />
                 ) : null}
-                <ProductInspiredSection />
+                <ProductInspiredSection
+                  product={{
+                    name: product.name,
+                    image:
+                      product.image ||
+                      product.images[0] ||
+                      "/images/product-ring.webp",
+                    price: product.price,
+                  }}
+                />
               </div>
             </div>
           </div>

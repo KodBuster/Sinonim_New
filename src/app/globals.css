@@ -268,7 +268,8 @@ body.mango-chat-open .messenger-fab {
 .messenger-fab {
   position: fixed;
   right: 1.25rem;
-  bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  /* Above inspired-video product CTA / buy button */
+  bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
   z-index: 120;
   width: 56px;
   height: 56px;
@@ -276,7 +277,7 @@ body.mango-chat-open .messenger-fab {
 @media (min-width: 768px) {
   .messenger-fab {
     right: 1.5rem;
-    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(6.75rem + env(safe-area-inset-bottom, 0px));
   }
 }
 .messenger-fab-main {
