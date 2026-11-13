@@ -3,7 +3,7 @@ import type { CheckoutFormData } from "@/lib/checkout";
 import { normalizePhone, SHOWROOM } from "@/lib/checkout";
 import { getProductBySlug, getProductDetails } from "@/lib/products-service";
 import { advantshopFetch } from "./client";
-import { isAdvantShopConfigured } from "./config";
+import { isAdvantShopConfigured, isAdvantShopOrdersEnabled } from "./config";
 
 type AdvantShopOrderItem = {
   ArtNo: string;
@@ -136,6 +136,11 @@ function buildOrderPayload(
 export async function submitAdvantShopOrder(
   input: SubmitStorefrontOrderInput
 ): Promise<SubmitStorefrontOrderResult> {
+  if (!isAdvantShopOrdersEnabled()) {
+    throw new Error(
+      "Загрузка заказов в AdvantShop отключена (ADVANTSHOP_ORDERS_ENABLED)"
+    );
+  }
   if (!isAdvantShopConfigured()) {
     throw new Error("AdvantShop не настроен на сервере");
   }

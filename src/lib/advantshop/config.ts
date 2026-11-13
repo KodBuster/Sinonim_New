@@ -32,6 +32,15 @@ export function isAdvantShopConfigured(): boolean {
   return Boolean(readEnv("ADVANTSHOP_BASE_URL") && readEnv("ADVANTSHOP_CATEGORY_MAP"));
 }
 
+/**
+ * Загрузка заказов в AdvantShop. По умолчанию выключена у Sinonim_New
+ * (каталог читаем, в AS/1С заказы не пишем). Включить: ADVANTSHOP_ORDERS_ENABLED=true
+ */
+export function isAdvantShopOrdersEnabled(): boolean {
+  const raw = readEnv("ADVANTSHOP_ORDERS_ENABLED")?.toLowerCase();
+  return raw === "true" || raw === "1" || raw === "yes";
+}
+
 export function getAdvantShopBaseUrl(): string {
   const base = readEnv("ADVANTSHOP_BASE_URL");
   if (!base) {

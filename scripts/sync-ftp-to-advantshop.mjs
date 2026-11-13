@@ -10,11 +10,14 @@
  *   http(s)://shop.../api/1c/importproducts?apikey=...
  *
  * Использование:
- *   node scripts/sync-ftp-to-advantshop.mjs
- *   node scripts/sync-ftp-to-advantshop.mjs --dry-run
- *   node scripts/sync-ftp-to-advantshop.mjs --file ./tmp/stocks.csv
+ *   SYNC_1C_ENABLED=true node scripts/sync-ftp-to-advantshop.mjs
+ *   SYNC_1C_ENABLED=true node scripts/sync-ftp-to-advantshop.mjs --dry-run
+ *   node scripts/sync-ftp-to-advantshop.mjs --force --file ./tmp/stocks.csv
+ *
+ * Sinonim_New: по умолчанию выключено (нужны SYNC_1C_ENABLED=true или --force).
  *
  * Env (в .env.local или окружении):
+ *   SYNC_1C_ENABLED=true
  *   ADVANTSHOP_BASE_URL=https://shop.synonym-jewelry.ru
  *   ADVANTSHOP_SERVER_API_KEY=...
  *   # либо полный URL:
@@ -104,6 +107,20 @@ main().catch((error) => {
 });
 
 async function main() {
+  // Sinonim_New: синхронизация 1С → AdvantShop временно выключена.
+  // Включить: SYNC_1C_ENABLED=true (или флаг --force).
+  const syncEnabled =
+    args.has("--force") ||
+    ["true", "1", "yes"].includes(
+      String(process.env.SYNC_1C_ENABLED || "false").toLowerCase()
+    );
+  if (!syncEnabled) {
+    console.error(
+      "[sync] disabled for Sinonim_New — set SYNC_1C_ENABLED=true or pass --force to run"
+    );
+    process.exit(1);
+  }
+
   mkdirSync(config.workDir, { recursive: true });
 
   const sourcePath = localFileArg

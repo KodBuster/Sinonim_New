@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { checkCartItemsStock } from "@/lib/advantshop/cart-stock";
 import { submitAdvantShopOrder } from "@/lib/advantshop/orders";
-import { isAdvantShopConfigured } from "@/lib/advantshop/config";
+import {
+  isAdvantShopConfigured,
+  isAdvantShopOrdersEnabled,
+} from "@/lib/advantshop/config";
 import type { CartItem } from "@/lib/cart";
 import {
   getDeliveryFee,
@@ -90,19 +93,32 @@ export async function POST(request: Request) {
     }
 
     const sequentialNumber = String(await allocateNextOrderNumber());
-    const advantshop = await submitAdvantShopOrder({
-      orderNumber: sequentialNumber,
-      customer,
-      items: body.items,
-      deliveryFee,
-    });
 
-    // Публичный номер: то, что вернул AdvantShop (обычно совпадает с отправленным 1, 2, 3…)
-    const orderId = advantshop.advantshopOrderNumber;
+    // Пока Sinonim_New в работе: заказы локально, без записи в AdvantShop/1С.
+    // Включить снова: ADVANTSHOP_ORDERS_ENABLED=true
+    let orderId = sequentialNumber;
+    let advantshopOrderId: number | undefined;
+
+    if (isAdvantShopOrdersEnabled()) {
+      const advantshop = await submitAdvantShopOrder({
+        orderNumber: sequentialNumber,
+        customer,
+        items: body.items,
+        deliveryFee,
+      });
+      // Публичный номер: то, что вернул AdvantShop (обычно совпадает с отправленным 1, 2, 3…)
+      orderId = advantshop.advantshopOrderNumber;
+      advantshopOrderId = advantshop.advantshopOrderId;
+    } else {
+      console.info(
+        "[orders] AdvantShop upload disabled (ADVANTSHOP_ORDERS_ENABLED); local order",
+        orderId,
+      );
+    }
 
     const response: Record<string, unknown> = {
       id: orderId,
-      advantshopOrderId: advantshop.advantshopOrderId,
+      advantshopOrderId,
       advantshopOrderNumber: orderId,
       deliveryFee,
       total,
