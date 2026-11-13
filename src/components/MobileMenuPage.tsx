@@ -20,7 +20,6 @@ const NAV_ITEMS = [
 
 const EXTRA_LINKS = [
   { label: "Весь каталог", href: "/shop" },
-  { label: "Сравнение", href: "/compare" },
   { label: "Избранное", href: "/favorites" },
   { label: "Корзина", href: "/cart" },
   { label: "Доставка и оплата", href: "/shipping" },

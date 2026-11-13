@@ -1,9 +1,15 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { createPortal } from "react-dom";
 import { ProductImage } from "@/components/catalog/ProductImage";
-import { CompareButton } from "@/components/compare/CompareButton";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { useCart } from "@/context/CartContext";
 import { trackAddToCart } from "@/lib/analytics/metrika";
@@ -49,6 +55,8 @@ type GalleryLayoutProps = {
   mainPriority?: boolean;
   onMainClick?: () => void;
   thumbListClassName?: string;
+  /** Missoma-style: thumbs column on the right of the main image */
+  thumbsPosition?: "left" | "right";
 };
 
 const MODAL_ICON_BUTTON_CLASS =
@@ -105,6 +113,9 @@ function GalleryVideo({
   );
 }
 
+const THUMB_PAIR_GAP = 12;
+const THUMB_LOOP_COPIES = 3;
+
 type GalleryThumbnailsProps = {
   slides: GallerySlide[];
   name: string;
@@ -114,6 +125,9 @@ type GalleryThumbnailsProps = {
   thumbImageSizes: string;
   isVideoActive: boolean;
   thumbListClassName?: string;
+  /** Fixed viewport height for top-aligned snap scrolling (desktop PDP). */
+  viewportHeight?: number | null;
+  style?: CSSProperties;
 };
 
 function GalleryThumbnails({
@@ -125,54 +139,195 @@ function GalleryThumbnails({
   thumbImageSizes,
   isVideoActive,
   thumbListClassName = "max-h-full",
+  viewportHeight = null,
+  style,
 }: GalleryThumbnailsProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const wheelLockRef = useRef(false);
+  const loopingRef = useRef(false);
+  const initializedRef = useRef(false);
+
+  const snapMode = viewportHeight != null && viewportHeight > 0;
+  const infinite = snapMode && slides.length > 1;
+  const thumbHeight = snapMode
+    ? (viewportHeight - THUMB_PAIR_GAP) / 2
+    : null;
+  const thumbWidth = thumbHeight != null ? thumbHeight * 0.75 : null;
+  const stepSize =
+    thumbHeight != null ? thumbHeight + THUMB_PAIR_GAP : null;
+  const setHeight =
+    thumbHeight != null && slides.length > 0
+      ? slides.length * thumbHeight + (slides.length - 1) * THUMB_PAIR_GAP
+      : null;
+
+  const loopSlides = useMemo(() => {
+    if (!infinite) return slides;
+    return Array.from({ length: THUMB_LOOP_COPIES }, () => slides).flat();
+  }, [infinite, slides]);
+
+  const normalizeLoop = useCallback(() => {
+    const el = listRef.current;
+    if (!el || setHeight == null || setHeight <= 0) return;
+    let top = el.scrollTop;
+    if (top < setHeight) {
+      loopingRef.current = true;
+      el.scrollTop = top + setHeight;
+      loopingRef.current = false;
+    } else if (top >= setHeight * 2) {
+      loopingRef.current = true;
+      el.scrollTop = top - setHeight;
+      loopingRef.current = false;
+    }
+  }, [setHeight]);
+
+  const scrollByStep = useCallback(
+    (direction: 1 | -1) => {
+      const el = listRef.current;
+      if (!el || stepSize == null || stepSize <= 0 || wheelLockRef.current) {
+        return;
+      }
+
+      const currentIndex = Math.round(el.scrollTop / stepSize);
+      const target = (currentIndex + direction) * stepSize;
+      wheelLockRef.current = true;
+      el.scrollTo({ top: target, behavior: "smooth" });
+      window.setTimeout(() => {
+        normalizeLoop();
+        wheelLockRef.current = false;
+      }, 280);
+    },
+    [stepSize, normalizeLoop],
+  );
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !infinite || setHeight == null) {
+      initializedRef.current = false;
+      return;
+    }
+    el.scrollTop = setHeight;
+    initializedRef.current = true;
+  }, [infinite, setHeight, slides.length]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !snapMode) return;
+
+    let scrollEndTimer = 0;
+    const onScroll = () => {
+      if (loopingRef.current) return;
+      window.clearTimeout(scrollEndTimer);
+      scrollEndTimer = window.setTimeout(() => {
+        if (wheelLockRef.current) return;
+        if (stepSize == null || stepSize <= 0) return;
+        const snapped = Math.round(el.scrollTop / stepSize) * stepSize;
+        if (Math.abs(snapped - el.scrollTop) > 1) {
+          el.scrollTo({ top: snapped, behavior: "smooth" });
+          window.setTimeout(normalizeLoop, 280);
+        } else {
+          normalizeLoop();
+        }
+      }, 80);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      window.clearTimeout(scrollEndTimer);
+    };
+  }, [snapMode, stepSize, normalizeLoop]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || !snapMode || stepSize == null || stepSize <= 0) return;
+
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 0.5) return;
+      event.preventDefault();
+      event.stopPropagation();
+      scrollByStep(event.deltaY > 0 ? 1 : -1);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [snapMode, stepSize, scrollByStep]);
+
   if (slides.length <= 1) return null;
+
+  const viewportStyle: CSSProperties | undefined = snapMode
+    ? {
+        height: viewportHeight,
+        width: thumbWidth ?? undefined,
+      }
+    : style;
 
   return (
     <div
-      className={`flex shrink-0 flex-col gap-3 overflow-y-auto py-0.5 pr-0.5 ${thumbListClassName}`}
+      className={`flex shrink-0 flex-col items-center ${thumbListClassName}`}
+      style={snapMode ? { width: thumbWidth ?? undefined } : style}
     >
-      {slides.map((slide, index) => (
-        <button
-          key={
-            slide.type === "video"
-              ? `video-${slide.src}`
-              : `${slide.src}-${index}`
-          }
-          type="button"
-          onClick={() => onActiveIndexChange(index)}
-          aria-label={
-            slide.type === "video"
-              ? `Видео ${name}`
-              : `${name} — фото ${index + 1}`
-          }
-          aria-pressed={activeIndex === index}
-          className={`relative shrink-0 overflow-hidden rounded-lg border-2 transition-all ${thumbClassName} ${
-            activeIndex === index
-              ? "border-brand-olive opacity-70"
-              : "border-transparent opacity-100"
+      <div className="w-full overflow-hidden" style={viewportStyle}>
+        <div
+          ref={listRef}
+          className={`flex h-full max-h-full flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
+            snapMode ? "snap-y snap-mandatory gap-3" : "gap-3"
           }`}
         >
-          {slide.type === "video" ? (
-            <GalleryVideo
-              key={`thumb-${slide.src}`}
-              src={slide.src}
-              label={`Видео ${name}`}
-              className="h-full w-full object-cover pointer-events-none"
-              preload="metadata"
-              playing={!isVideoActive}
-            />
-          ) : (
-            <ProductImage
-              src={slide.src}
-              alt=""
-              fill
-              className="object-cover"
-              sizes={thumbImageSizes}
-            />
-          )}
+          {loopSlides.map((slide, index) => {
+            const realIndex = index % slides.length;
+            return (
+              <button
+                key={`${slide.type}-${slide.src}-${index}`}
+                type="button"
+                onClick={() => onActiveIndexChange(realIndex)}
+                aria-label={
+                  slide.type === "video"
+                    ? `Видео ${name}`
+                    : `${name} — фото ${realIndex + 1}`
+                }
+                aria-pressed={activeIndex === realIndex}
+                className={`relative shrink-0 overflow-hidden transition-opacity hover:opacity-80 ${
+                  snapMode ? "snap-start rounded-2xl" : thumbClassName
+                }`}
+                style={
+                  snapMode && thumbHeight != null
+                    ? { height: thumbHeight, width: "100%" }
+                    : undefined
+                }
+              >
+                {slide.type === "video" ? (
+                  <GalleryVideo
+                    key={`thumb-${slide.src}-${index}`}
+                    src={slide.src}
+                    label={`Видео ${name}`}
+                    className="h-full w-full object-cover pointer-events-none"
+                    preload="metadata"
+                    playing={!isVideoActive}
+                  />
+                ) : (
+                  <ProductImage
+                    src={slide.src}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes={thumbImageSizes}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      {snapMode ? (
+        <button
+          type="button"
+          className="mt-1.5 flex justify-center p-1 text-brand-olive-dark transition-opacity hover:opacity-70"
+          aria-label="Следующие фото"
+          onClick={() => scrollByStep(1)}
+        >
+          <span className="block h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] border-t-current" />
         </button>
-      ))}
+      ) : null}
     </div>
   );
 }
@@ -568,6 +723,9 @@ function MobileProductGallery({
   );
 }
 
+const GALLERY_VIEWPORT_MAX_H =
+  "max-h-[calc(100dvh-var(--site-header-height,4rem)-1.5rem)]";
+
 function GalleryLayout({
   slides,
   name,
@@ -581,9 +739,31 @@ function GalleryLayout({
   mainPriority,
   onMainClick,
   thumbListClassName = "max-h-full",
+  thumbsPosition = "right",
 }: GalleryLayoutProps) {
   const activeSlide = slides[activeIndex] ?? slides[0];
   const isVideoActive = activeSlide?.type === "video";
+  const mainObserverRef = useRef<ResizeObserver | null>(null);
+  const [thumbsHeight, setThumbsHeight] = useState<number | null>(null);
+
+  const setMainNode = useCallback((node: HTMLElement | null) => {
+    mainObserverRef.current?.disconnect();
+    mainObserverRef.current = null;
+    if (!node) return;
+
+    const update = () => setThumbsHeight(node.getBoundingClientRect().height);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    mainObserverRef.current = observer;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      mainObserverRef.current?.disconnect();
+      mainObserverRef.current = null;
+    };
+  }, []);
 
   if (!activeSlide) return null;
 
@@ -597,34 +777,51 @@ function GalleryLayout({
     />
   );
 
-  return (
-    <div className="flex gap-3 md:gap-4 items-start min-h-0">
-      <GalleryThumbnails
-        slides={slides}
-        name={name}
-        activeIndex={activeIndex}
-        onActiveIndexChange={onActiveIndexChange}
-        thumbClassName={thumbClassName}
-        thumbImageSizes={thumbImageSizes}
-        isVideoActive={isVideoActive}
-        thumbListClassName={thumbListClassName}
-      />
+  const thumbs = (
+    <GalleryThumbnails
+      slides={slides}
+      name={name}
+      activeIndex={activeIndex}
+      onActiveIndexChange={onActiveIndexChange}
+      thumbClassName={thumbClassName}
+      thumbImageSizes={thumbImageSizes}
+      isVideoActive={isVideoActive}
+      thumbListClassName={thumbListClassName}
+      viewportHeight={thumbsHeight}
+    />
+  );
 
-      {onMainClick ? (
-        <button
-          type="button"
-          onClick={onMainClick}
-          className={`min-w-0 flex-1 relative overflow-hidden rounded-xl bg-brand-surface shadow-sm cursor-zoom-in ${mainClassName}`}
-          aria-label="Открыть галерею в полном размере"
-        >
-          {mainPanel}
-        </button>
+  const main = onMainClick ? (
+    <button
+      ref={setMainNode}
+      type="button"
+      onClick={onMainClick}
+      className={`relative min-w-0 flex-1 overflow-hidden bg-[#f5f4f1] cursor-zoom-in ${mainClassName}`}
+      aria-label="Открыть галерею в полном размере"
+    >
+      {mainPanel}
+    </button>
+  ) : (
+    <div
+      ref={setMainNode}
+      className={`relative min-w-0 flex-1 overflow-hidden bg-[#f5f4f1] ${mainClassName}`}
+    >
+      {mainPanel}
+    </div>
+  );
+
+  return (
+    <div className={`flex min-h-0 items-start gap-3 md:gap-3.5 ${GALLERY_VIEWPORT_MAX_H}`}>
+      {thumbsPosition === "left" ? (
+        <>
+          {thumbs}
+          {main}
+        </>
       ) : (
-        <div
-          className={`min-w-0 flex-1 relative overflow-hidden rounded-xl bg-brand-surface ${mainClassName}`}
-        >
-          {mainPanel}
-        </div>
+        <>
+          {main}
+          {thumbs}
+        </>
       )}
     </div>
   );
@@ -785,7 +982,6 @@ function ProductGalleryModalFooter({
             {!inStock ? "Скоро будет" : added ? "Добавлено ✓" : "Купить"}
           </button>
           <FavoriteButton slug={slug} className={MODAL_ICON_BUTTON_CLASS} />
-          <CompareButton slug={slug} className={MODAL_ICON_BUTTON_CLASS} />
         </div>
       </div>
     </div>
@@ -981,13 +1177,13 @@ export function ProductGallery({
           name={name}
           activeIndex={activeIndex}
           onActiveIndexChange={setActiveIndex}
-          thumbClassName="h-24 w-24 md:h-28 md:w-28 lg:h-32 lg:w-32"
-          mainClassName="aspect-square"
+          thumbClassName="aspect-[3/4] w-full rounded-2xl"
+          mainClassName={`aspect-square w-full rounded-2xl ${GALLERY_VIEWPORT_MAX_H} max-w-[calc(100dvh-var(--site-header-height,4rem)-1.5rem)]`}
           mainObjectFit="cover"
           mainImageSizes="(max-width: 1024px) 100vw, 50vw"
-          thumbImageSizes="128px"
+          thumbImageSizes="(max-width: 1280px) 180px, 220px"
           mainPriority
-          thumbListClassName="max-h-[min(80vw,36rem)]"
+          thumbsPosition="right"
           onMainClick={() => setModalOpen(true)}
         />
       </div>

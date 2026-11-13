@@ -3,7 +3,6 @@ import "@fontsource/inter/cyrillic-400.css";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/playfair-display/cyrillic-400.css";
 import { CartProvider } from "@/context/CartContext";
-import { CompareProvider } from "@/context/CompareContext";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { MangoOfficeChat } from "@/components/MangoOfficeChat";
 import { MessengerFab } from "@/components/MessengerFab";
@@ -44,13 +43,11 @@ export default function RootLayout({
         <YandexMetrika />
         <PageVisitTracker />
         <CartProvider>
-          <CompareProvider>
-            <FavoritesProvider>
-              {children}
-              <MessengerFab />
-              <MangoOfficeChat />
-            </FavoritesProvider>
-          </CompareProvider>
+          <FavoritesProvider>
+            {children}
+            <MessengerFab />
+            <MangoOfficeChat />
+          </FavoritesProvider>
         </CartProvider>
       </body>
     </html>

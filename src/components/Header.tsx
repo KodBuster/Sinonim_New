@@ -1,10 +1,9 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { CartLink } from "@/components/cart/CartLink";
-import { CompareLink } from "@/components/compare/CompareLink";
 import { FavoritesLink } from "@/components/favorites/FavoritesLink";
 import { MetrikaPhoneLink } from "@/components/analytics/MetrikaPhoneLink";
 import { SearchForm } from "@/components/search/SearchForm";
@@ -98,7 +97,6 @@ function HeaderActions({
         onSearchToggle={onSearchToggle}
       />
       <FavoritesLink />
-      <CompareLink />
       <CartLink />
     </>
   );
@@ -152,8 +150,33 @@ export function Header() {
     setSearchOpen((open) => !open);
   }, []);
 
+  const headerRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+
+    const syncHeight = () => {
+      document.documentElement.style.setProperty(
+        "--site-header-height",
+        `${el.offsetHeight}px`,
+      );
+    };
+
+    syncHeight();
+    const observer = new ResizeObserver(syncHeight);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--site-header-height");
+    };
+  }, [searchOpen]);
+
   return (
-    <header className="sticky top-0 z-[100] border-b border-brand-terracotta bg-brand-surface">
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-[100] border-b border-brand-terracotta bg-brand-surface"
+    >
       {/* Same width as desktop hero banner so edges align */}
       <div className="relative mx-auto max-w-[1664px] px-4 md:px-6 lg:px-10">
         <div className="hidden md:flex justify-between items-center py-2 text-xs text-brand-muted border-b border-brand-sand">

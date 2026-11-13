@@ -4,7 +4,7 @@ import { useFavorites } from "@/context/FavoritesContext";
 
 type FavoriteButtonProps = {
   slug: string;
-  variant?: "icon" | "text";
+  variant?: "icon" | "icon-plain" | "text";
   className?: string;
 };
 
@@ -52,6 +52,26 @@ export function FavoriteButton({
       >
         <IconHeart active={active} />
         {active ? "В избранном" : "Добавить в избранное"}
+      </button>
+    );
+  }
+
+  if (variant === "icon-plain") {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={!isReady}
+        className={`inline-flex h-10 w-10 items-center justify-center transition-colors ${
+          active
+            ? "text-brand-terracotta"
+            : "text-brand-olive-dark hover:text-brand-terracotta"
+        } ${className}`}
+        aria-pressed={active}
+        aria-label={active ? "Убрать из избранного" : "Добавить в избранное"}
+        title={active ? "Убрать из избранного" : "Добавить в избранное"}
+      >
+        <IconHeart active={active} />
       </button>
     );
   }

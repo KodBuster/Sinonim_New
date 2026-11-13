@@ -1,33 +1,75 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { CompareButton } from "@/components/compare/CompareButton";
-import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { useCart } from "@/context/CartContext";
 import { trackAddToCart } from "@/lib/analytics/metrika";
-import { formatInsertMassLabel, SYNTHETIC_DIAMOND_CAP } from "@/lib/synthetic-diamond-labels";
+import { FREE_DELIVERY_THRESHOLD } from "@/lib/checkout";
+import { formatInsertMassLabel } from "@/lib/synthetic-diamond-labels";
 import { formatPrice, type ProductDetails } from "@/lib/products";
 import { useProductSelection } from "./ProductSelectionContext";
+import { ProductAccordions } from "./ProductAccordions";
 
-function formatWeightGrams(value: string): string {
-  const trimmed = value.trim().replace(/\s*г(?:р)?\.?\s*$/i, "");
-  return `${trimmed} гр.`;
+const PRODUCT_PERKS = [
+  "2 года гарантии",
+  `Бесплатная доставка от ${formatPrice(FREE_DELIVERY_THRESHOLD)}`,
+  "Шоурум в Москве",
+] as const;
+
+function ProductPerksCarousel() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % PRODUCT_PERKS.length);
+    }, 4000);
+    return () => window.clearInterval(timer);
+  }, [index]);
+
+  return (
+    <div>
+      <div className="relative overflow-hidden bg-[#f3f1ec] px-4 py-3 text-center text-sm text-brand-olive-dark">
+        <p key={PRODUCT_PERKS[index]} className="transition-opacity duration-300">
+          {PRODUCT_PERKS[index]}
+        </p>
+      </div>
+      <div className="mt-2 flex justify-end gap-1.5 pr-0.5">
+        {PRODUCT_PERKS.map((perk, perkIndex) => (
+          <button
+            key={perk}
+            type="button"
+            aria-label={perk}
+            aria-current={perkIndex === index}
+            onClick={() => setIndex(perkIndex)}
+            className={`h-1.5 w-1.5 rounded-full transition-colors ${
+              perkIndex === index ? "bg-black" : "bg-black/25"
+            }`}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 type ProductConfiguratorProps = {
   product: ProductDetails;
+  showAccordions?: boolean;
 };
 
-export function ProductConfigurator({ product }: ProductConfiguratorProps) {
-  const defaultVariant = product.stoneVariants.find(
-    (variant) => Math.abs(variant.weight - product.stoneWeight) < 0.001,
-  ) ?? product.stoneVariants[0];
+export function ProductConfigurator({
+  product,
+  showAccordions = true,
+}: ProductConfiguratorProps) {
+  const defaultVariant =
+    product.stoneVariants.find(
+      (variant) => Math.abs(variant.weight - product.stoneWeight) < 0.001,
+    ) ?? product.stoneVariants[0];
 
   const { selectedSize, setSelectedSize, selectedSizeLabel, artNo, price, diamondWeight } =
     useProductSelection();
   const cartStoneLabel = formatInsertMassLabel(diamondWeight);
   const [added, setAdded] = useState(false);
+  const [sizeTouched, setSizeTouched] = useState(false);
   const { addItem } = useCart();
   const selectedSizeStock =
     selectedSize && product.sizeStockAmounts
@@ -35,15 +77,17 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
       : undefined;
   const selectedSizeAvailable =
     selectedSizeStock === undefined || selectedSizeStock > 0;
+  const needsSize = product.sizeOptions.length > 0;
   const canBuy =
     product.inStock !== false &&
     selectedSizeAvailable &&
-    (product.sizeOptions.length === 0 || selectedSize != null);
-  const displayWeightGrams =
-    (selectedSize && product.sizeWeightGrams?.[selectedSize]) ||
-    product.weightGrams;
+    (!needsSize || selectedSize != null);
 
   const handleAddToCart = () => {
+    if (needsSize && selectedSize == null) {
+      setSizeTouched(true);
+      return;
+    }
     if (!canBuy) return;
 
     const variant = [
@@ -74,76 +118,63 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
     setTimeout(() => setAdded(false), 3000);
   };
 
+  const sizeError = needsSize && sizeTouched && selectedSize == null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <div className="flex flex-wrap items-center gap-3 mb-2">
-          <p className="font-heading text-3xl md:text-4xl text-brand-olive-dark">
-            {formatPrice(price)}
-          </p>
-          {product.badge && (
-            <span
-              className={`px-2.5 py-1 text-white text-[10px] tracking-widest uppercase ${
-                product.badge === "Новинка"
-                  ? "bg-[#7f8e47]"
-                  : "bg-brand-terracotta"
-              }`}
-            >
-              {product.badge}
-            </span>
-          )}
-        </div>
-        <p className="text-sm text-brand-muted">{SYNTHETIC_DIAMOND_CAP}</p>
+        <p className="text-sm text-brand-olive-dark">
+          {formatPrice(price)}
+        </p>
         {product.inStock === false ? (
-          <p className="mt-2 text-sm font-medium text-brand-terracotta">
-            Скоро будет
-          </p>
-        ) : null}
-        {displayWeightGrams ? (
-          <p className="mt-1 text-sm text-brand-muted">
-            Вес изделия: {formatWeightGrams(displayWeightGrams)}
-          </p>
-        ) : null}
-        {artNo ? (
-          <p className="mt-1 text-sm text-brand-muted">
-            Артикул:{" "}
-            <span className="font-medium text-brand-olive-dark">{artNo}</span>
-          </p>
+          <p className="mt-2 text-sm font-medium text-brand-terracotta">Скоро будет</p>
         ) : null}
       </div>
 
       <div className="space-y-4">
-        {product.sizeOptions.length > 0 && (
+        {needsSize ? (
           <div>
             <p
               id="size-label"
-              className="block text-xs tracking-[0.15em] uppercase text-brand-muted mb-2"
+              className={`mb-2 text-sm ${
+                sizeError ? "text-red-600" : "text-brand-olive-dark"
+              }`}
             >
-              Размер
+              Размер:{" "}
+              {selectedSizeLabel != null ? (
+                <span className="font-medium">{selectedSizeLabel}</span>
+              ) : (
+                <span className={sizeError ? "font-medium" : undefined}>
+                  выберите размер
+                </span>
+              )}
             </p>
             <div
-              className="grid grid-cols-4 sm:grid-cols-5 gap-2"
+              className="flex flex-wrap gap-2"
               role="radiogroup"
               aria-labelledby="size-label"
             >
               {product.sizeOptions.map((size) => {
                 const isSelected = selectedSize === size.value;
                 const sizeStock = product.sizeStockAmounts?.[size.value];
-                const sizeAvailable =
-                  sizeStock === undefined || sizeStock > 0;
+                const sizeAvailable = sizeStock === undefined || sizeStock > 0;
                 return (
                   <button
                     key={size.value}
                     type="button"
                     role="radio"
                     aria-checked={isSelected}
-                    onClick={() => setSelectedSize(size.value)}
-                    className={`touch-manipulation rounded-lg border px-2 py-2.5 text-center text-sm transition-colors [-webkit-tap-highlight-color:transparent] ${
+                    disabled={!sizeAvailable}
+                    onClick={() => {
+                      setSelectedSize(size.value);
+                      setSizeTouched(true);
+                    }}
+                    className={`relative flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-colors ${
                       isSelected
-                        ? "border-brand-olive-logo bg-brand-olive-logo text-white font-medium"
+                        ? "border-brand-olive-dark bg-brand-olive-dark text-white"
                         : sizeAvailable
-                          ? "border-brand-olive/20 bg-brand-surface text-brand-text hover:border-brand-olive"
-                          : "border-brand-olive/10 bg-brand-surface text-brand-muted"
+                          ? "border-black/20 bg-white text-brand-olive-dark hover:border-brand-olive-dark"
+                          : "cursor-not-allowed border-black/10 bg-[#f3f3f3] text-black/30 line-through"
                     }`}
                   >
                     {size.label}
@@ -151,22 +182,17 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
                 );
               })}
             </div>
-            <p className="mt-2 text-xs text-brand-muted">
-              <a href="/how-size-ring" className="text-brand-terracotta hover:underline">
-                Как определить размер →
-              </a>
-            </p>
           </div>
-        )}
+        ) : null}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="space-y-2.5 pt-1">
         <button
           type="button"
           data-add-to-cart
           onClick={handleAddToCart}
-          disabled={!canBuy}
-          className="flex-1 px-6 py-3.5 bg-brand-terracotta hover:bg-brand-terracotta-logo disabled:cursor-not-allowed disabled:opacity-50 text-white text-sm tracking-widest uppercase transition-colors"
+          disabled={product.inStock === false || !selectedSizeAvailable}
+          className="w-full bg-brand-olive-dark px-6 py-3.5 text-sm font-medium tracking-[0.04em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
         >
           {product.inStock === false || !selectedSizeAvailable
             ? "Скоро будет"
@@ -174,34 +200,29 @@ export function ProductConfigurator({ product }: ProductConfiguratorProps) {
               ? "Добавлено ✓"
               : "В корзину"}
         </button>
-        <button
-          type="button"
-          className="flex-1 px-6 py-3.5 border border-brand-olive text-brand-olive-dark hover:bg-brand-terracotta hover:text-white text-sm tracking-widest uppercase transition-colors"
+        <Link
+          href="/showroom"
+          className="flex w-full items-center justify-center border border-black/15 bg-white px-6 py-3.5 text-sm font-medium tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-olive-dark"
         >
           Примерить в шоуруме
-        </button>
+        </Link>
+        <ProductPerksCarousel />
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <FavoriteButton slug={product.slug} variant="text" className="flex-1" />
-        <CompareButton slug={product.slug} variant="text" className="flex-1" />
-      </div>
-
-      <Link
-        href="/favorites"
-        className="inline-flex text-sm text-brand-terracotta hover:text-brand-terracotta transition-colors"
-      >
-        Открыть избранное →
-      </Link>
-
-      {added && (
+      {added ? (
         <p className="text-sm text-brand-terracotta">
           Товар добавлен в корзину.{" "}
           <Link href="/cart" className="underline hover:text-brand-terracotta">
             Перейти в корзину →
           </Link>
         </p>
-      )}
+      ) : null}
+
+      {artNo ? (
+        <p className="text-xs text-brand-muted">Артикул: {artNo}</p>
+      ) : null}
+
+      {showAccordions ? <ProductAccordions product={product} /> : null}
     </div>
   );
 }

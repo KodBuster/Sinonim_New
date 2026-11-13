@@ -45,15 +45,6 @@ function resolveArtNo(
   return product.artNo;
 }
 
-function pickDefaultSelectedSize(product: ProductDetails): string | null {
-  if (!product.sizeOptions.length) return null;
-  const inStock = product.sizeOptions.find((option) => {
-    const amount = product.sizeStockAmounts?.[option.value];
-    return amount === undefined || amount > 0;
-  });
-  return (inStock ?? product.sizeOptions[0]).value;
-}
-
 function isValidSize(product: ProductDetails, size: string | null): boolean {
   if (!size) return false;
   return product.sizeOptions.some((option) => option.value === size);
@@ -72,7 +63,7 @@ export function ProductSelectionProvider({
 
   const [selectedSize, setSelectedSizeState] = useState<string | null>(() => {
     if (isValidSize(product, sizeParam)) return sizeParam;
-    return pickDefaultSelectedSize(product);
+    return null;
   });
 
   useEffect(() => {

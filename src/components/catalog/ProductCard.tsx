@@ -1,6 +1,5 @@
 ﻿import { ProductImage } from "@/components/catalog/ProductImage";
 import Link from "next/link";
-import { CompareButton } from "@/components/compare/CompareButton";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { formatPrice, type Product } from "@/lib/products";
@@ -41,7 +40,6 @@ export function ProductCard({
       )}
       <div className="absolute top-3 right-3 z-10 flex flex-col gap-2">
         <FavoriteButton slug={product.slug} />
-        <CompareButton slug={product.slug} />
       </div>
     </div>
   );

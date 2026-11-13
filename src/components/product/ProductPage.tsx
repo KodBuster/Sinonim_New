@@ -1,23 +1,38 @@
 ﻿import { Suspense } from "react";
 import Link from "next/link";
 import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
-import { CATEGORIES, type ProductDetails } from "@/lib/products";
-import type { Product } from "@/lib/products";
-import { getInsertMassDisplayLabel } from "@/lib/synthetic-diamond-labels";
+import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { ProductCard } from "@/components/catalog/ProductCard";
-import { ProductCharacteristics } from "./ProductCharacteristics";
+import { CATEGORIES, type Product, type ProductDetails } from "@/lib/products";
+import { getInsertMassDisplayLabel } from "@/lib/synthetic-diamond-labels";
+import { resolveProductVideoUrl } from "@/lib/product-video";
+import { ProductAccordions } from "./ProductAccordions";
+import { ProductCategories } from "./ProductCategories";
 import { ProductComplectSection } from "./ProductComplectSection";
 import { ProductConfigurator } from "./ProductConfigurator";
-import { ProductDescription } from "./ProductDescription";
 import { ProductGallery } from "./ProductGallery";
 import { ProductSelectionProvider } from "./ProductSelectionContext";
-import { resolveProductVideoUrl } from "@/lib/product-video";
 
 type ProductPageProps = {
   product: ProductDetails;
   relatedProducts: Product[];
   complectProducts: Product[];
 };
+
+function productTagline(product: ProductDetails) {
+  switch (product.category) {
+    case "rings":
+      return "Кольцо из серебра 925 — для повседневных сочетаний";
+    case "earrings":
+      return "Серьги из серебра 925 с огранённым синтетическим алмазом";
+    case "pendants":
+      return "Колье из серебра 925 с огранённым синтетическим алмазом";
+    case "bracelets":
+      return "Браслет из серебра 925 с огранённым синтетическим алмазом";
+    default:
+      return "Украшение из серебра 925 с огранённым синтетическим алмазом";
+  }
+}
 
 export function ProductPage({
   product,
@@ -33,8 +48,9 @@ export function ProductPage({
     ...(product.offerArtNos ?? []),
   ]);
   const cartStoneLabel = insertMass;
+
   return (
-    <section className="py-8 md:py-12">
+    <section className="bg-white pb-16 md:pb-24">
       <ProductViewTracker
         id={product.artNo ?? product.slug}
         name={product.name}
@@ -42,124 +58,102 @@ export function ProductPage({
         category={product.category}
         variant={insertMass}
       />
-      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10">
-        <nav
-          className="mb-6 text-xs text-brand-muted/55"
-          aria-label="Хлебные крошки"
-        >
-          <ol className="flex flex-wrap items-center gap-1.5">
-            <li>
-              <Link href="/" className="hover:text-brand-muted transition-colors">
-                Главная
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <Link href="/shop" className="hover:text-brand-muted transition-colors">
-                Каталог
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <Link
-                href={`/shop/${product.category}`}
-                className="hover:text-brand-muted transition-colors"
-              >
-                {categoryTitle}
-              </Link>
-            </li>
-            <li aria-hidden>/</li>
-            <li>
-              <span>{product.name}</span>
-            </li>
-          </ol>
-        </nav>
 
-        <Suspense fallback={null}>
-          <ProductSelectionProvider product={product}>
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-14 mb-16 md:mb-20">
-            <ProductGallery
-              images={product.images}
-              name={product.name}
-              videoUrl={videoUrl}
-              slug={product.slug}
-              price={product.price}
-              productImage={product.image}
-              category={product.category}
-              stoneWeight={product.stoneWeight}
-              stoneLabel={cartStoneLabel}
-              inStock={product.inStock !== false}
-            />
-
-            <div>
-              <p className="text-brand-terracotta text-sm tracking-[0.2em] uppercase mb-2">
-                {categoryTitle}
-              </p>
-              <h1 className="font-heading text-3xl md:text-4xl text-brand-olive-dark mb-6">
-                {product.name}
-              </h1>
-              <ProductConfigurator product={product} />
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-8 mb-16 md:mb-20">
-            <ProductDescription product={product} />
-
-            <ProductCharacteristics product={product} />
-          </div>
-
-          <div className="rounded-xl border border-brand-olive/15 bg-brand-surface p-6 md:p-8">
-            <h2 className="font-heading text-xl text-brand-olive-dark mb-4">
-              Полезно перед покупкой
-            </h2>
-            <ul className="space-y-2 text-sm md:text-base">
-              {(product.category === "rings" || product.category === "bracelets") && (
-                <li>
-                  <Link href="/how-size-ring" className="text-brand-terracotta hover:underline">
-                    Как определить размер кольца или браслета
+      <Suspense fallback={null}>
+        <ProductSelectionProvider product={product}>
+          {/*
+            Sticky gallery only pairs with the buy CTA row, then categories
+            follow immediately so the gap under photos stays small.
+          */}
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
+            <div className="grid items-start gap-x-8 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-x-10 lg:gap-y-5 xl:gap-x-14">
+              <div className="min-w-0 lg:sticky lg:top-[var(--site-header-height,0px)] lg:self-start">
+                <div className="mb-3 md:mb-4">
+                  <Link
+                    href={`/shop/${product.category}`}
+                    className="inline-flex items-center gap-1.5 text-sm text-brand-olive-dark hover:text-brand-terracotta"
+                  >
+                    <span aria-hidden>‹</span>
+                    {categoryTitle}
                   </Link>
-                </li>
-              )}
-              <li>
-                <Link href="/warranty" className="text-brand-terracotta hover:underline">
-                  Гарантия и сертификация
-                </Link>
-              </li>
-              <li>
-                <Link href="/guide/lab-grown-diamonds" className="text-brand-terracotta hover:underline">
-                  Об ограненных синтетических алмазах
-                </Link>
-              </li>
-              <li>
-                <Link href="/showroom" className="text-brand-terracotta hover:underline">
-                  Примерить в шоуруме в Москве
-                </Link>
-              </li>
-            </ul>
-          </div>
-          </ProductSelectionProvider>
-        </Suspense>
+                </div>
+                <ProductGallery
+                  images={product.images}
+                  name={product.name}
+                  videoUrl={videoUrl}
+                  slug={product.slug}
+                  price={product.price}
+                  productImage={product.image}
+                  category={product.category}
+                  stoneWeight={product.stoneWeight}
+                  stoneLabel={cartStoneLabel}
+                  inStock={product.inStock !== false}
+                />
+              </div>
 
-        {complectProducts.length > 0 && product.setArtNos?.length ? (
-          <ProductComplectSection products={complectProducts} />
-        ) : null}
+              <div className="min-w-0">
+                {product.badge ? (
+                  <span
+                    className={`mb-3 inline-flex rounded-full px-3 py-1 text-[11px] font-medium tracking-wide ${
+                      product.badge === "Новинка"
+                        ? "bg-[#dfe6c8] text-[#4a5335]"
+                        : "bg-[#e8eef3] text-[#3a4a58]"
+                    }`}
+                  >
+                    {product.badge}
+                  </span>
+                ) : null}
 
-        {related.length > 0 && (
-          <div className={complectProducts.length > 0 ? "mt-16 md:mt-20" : ""}>
-            <p className="text-brand-terracotta text-sm tracking-[0.2em] uppercase mb-2">
-              Похожие
-            </p>
-            <h2 className="font-heading text-2xl md:text-3xl text-brand-olive-dark mb-8">
-              Вам также понравится
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-              {related.map((item) => (
-                <ProductCard key={item.id} product={item} />
-              ))}
+                <div className="mb-2 flex items-start justify-between gap-4">
+                  <h1 className="font-heading text-[1.75rem] leading-[1.15] text-brand-olive-dark md:text-[2.15rem]">
+                    {product.name}
+                  </h1>
+                  <FavoriteButton
+                    slug={product.slug}
+                    variant="icon-plain"
+                    className="mt-1 shrink-0"
+                  />
+                </div>
+
+                <p className="mb-5 text-sm text-brand-muted md:text-[15px]">
+                  {productTagline(product)}
+                </p>
+
+                <ProductConfigurator product={product} showAccordions={false} />
+              </div>
             </div>
           </div>
-        )}
-      </div>
+
+          <div className="mt-4 md:mt-5 px-1 md:px-1.5 lg:px-2">
+            <ProductCategories />
+          </div>
+
+          <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
+            <div className="mt-6 grid items-start lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-x-10 xl:gap-x-14">
+              <div className="hidden lg:block" aria-hidden />
+              <div className="min-w-0">
+                <ProductAccordions product={product} />
+                {complectProducts.length > 0 && product.setArtNos?.length ? (
+                  <ProductComplectSection products={complectProducts} />
+                ) : null}
+              </div>
+            </div>
+
+            {related.length > 0 && (
+              <div className="mt-16 md:mt-20">
+                <h2 className="mb-6 font-heading text-2xl text-brand-olive-dark md:text-[1.75rem]">
+                  Ещё модели
+                </h2>
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+                  {related.map((item) => (
+                    <ProductCard key={item.id} product={item} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </ProductSelectionProvider>
+      </Suspense>
     </section>
   );
 }
