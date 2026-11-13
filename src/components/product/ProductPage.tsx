@@ -135,10 +135,6 @@ export function ProductPage({
             </div>
           </div>
 
-          <div className="mt-4 md:mt-5">
-            <ProductCategories />
-          </div>
-
           <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
             {related.length > 0 && (
               <div className="mt-16 md:mt-20">
@@ -152,6 +148,10 @@ export function ProductPage({
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="mt-4 md:mt-5">
+            <ProductCategories />
           </div>
         </ProductSelectionProvider>
       </Suspense>
