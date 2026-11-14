@@ -37,7 +37,7 @@ function useRedesignStyles() {
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
-    link.href = "/redesign/site.css?v=header-fixed-1";
+    link.href = "/redesign/site.css?v=promo-title-1";
     document.documentElement.classList.add("synonym-redesign-active");
     document.body.classList.add("synonym-redesign-active");
     return () => {

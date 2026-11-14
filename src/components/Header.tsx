@@ -108,7 +108,7 @@ export function Header({ overlay = false }: HeaderProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className="shrink-0 whitespace-nowrap border-b-2 border-transparent py-2 text-[11px] font-medium uppercase tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-terracotta hover:text-brand-olive-logo xl:text-xs"
+                className="shrink-0 whitespace-nowrap border-b-2 border-transparent py-2 font-body text-[12px] font-normal uppercase tracking-[0.02em] text-brand-olive-dark transition-colors hover:border-brand-terracotta hover:text-brand-olive-logo xl:text-[13px]"
               >
                 {item.label}
               </Link>

@@ -139,6 +139,15 @@ export const PRODUCTS: Product[] = [
     category: "rings",
     price: 24900,
     image: "/images/product-bracelet.webp",
+    // Временная локальная галерея для вёрстки карусели, пока AdvantShop не отдаёт фото.
+    // Когда details из AdvantShop работают — используются их images, этот массив не мешает.
+    images: [
+      "/images/product-bracelet.webp",
+      "/images/product-ring.webp",
+      "/images/product-earrings.webp",
+      "/images/product-necklace.webp",
+      "/images/showroom.jpg.jpg",
+    ],
     stoneWeight: 0.2,
     badge: "Хит",
   },

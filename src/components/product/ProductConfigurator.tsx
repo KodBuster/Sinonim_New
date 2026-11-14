@@ -67,7 +67,7 @@ function ProductPerksCarousel() {
           {trackSlides.map((perk, slideIndex) => (
             <p
               key={`${perk}-${slideIndex}`}
-              className="w-full shrink-0 px-4 text-center"
+              className="product-video-safe-label w-full shrink-0 px-4 text-center"
             >
               {perk}
             </p>
@@ -233,7 +233,7 @@ export function ProductConfigurator({
           data-add-to-cart
           onClick={handleAddToCart}
           disabled={product.inStock === false || !selectedSizeAvailable}
-          className="w-full bg-brand-olive-dark px-6 py-3.5 text-sm font-medium tracking-[0.04em] text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+          className="product-video-safe-label w-full bg-brand-olive-dark px-6 py-3.5 text-center text-sm font-medium tracking-[0.04em] text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
         >
           {product.inStock === false || !selectedSizeAvailable
             ? "Скоро будет"
@@ -243,7 +243,7 @@ export function ProductConfigurator({
         </button>
         <Link
           href="/showroom"
-          className="flex w-full items-center justify-center border border-black/15 bg-white px-6 py-3.5 text-sm font-medium tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-olive-dark"
+          className="product-video-safe-label flex w-full items-center justify-center border border-black/15 bg-white px-6 py-3.5 text-sm font-medium tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-olive-dark"
         >
           Примерить в шоуруме
         </Link>

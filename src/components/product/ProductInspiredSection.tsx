@@ -72,6 +72,7 @@ function InspiredVideoModal({
   product: InspiredProduct;
   onClose: () => void;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
   const scrollingTo = useRef<number | null>(null);
@@ -112,6 +113,83 @@ function InspiredVideoModal({
     if (!el) return;
     el.scrollTo({ top: startIndex * el.clientHeight, behavior: "auto" });
   }, [startIndex]);
+
+  // Сигнал странице: сдвиг колонки к карусели + запас для подписей в кнопках
+  useEffect(() => {
+    const panel = panelRef.current;
+    let shiftFrame = 0;
+    /** Зазор колонка↔карусель ≈ gap main↔thumbs (1rem) */
+    const GALLERY_GAP_PX = 16;
+
+    const syncCover = () => {
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+      const fromRight = Math.max(0, window.innerWidth - rect.left);
+      document.documentElement.style.setProperty(
+        "--inspired-video-cover",
+        `${Math.round(fromRight)}px`,
+      );
+    };
+
+    const syncBuyShift = () => {
+      const gallery = document.querySelector<HTMLElement>("[data-product-gallery]");
+      const buy = document.querySelector<HTMLElement>(".product-buy-column");
+      if (!gallery || !buy) {
+        document.documentElement.style.setProperty("--product-buy-shift", "0px");
+        return;
+      }
+
+      const galleryRect = gallery.getBoundingClientRect();
+      // Скрытая desktop-галерея на мобилке даёт нули — сдвиг не трогаем
+      if (galleryRect.width < 8) {
+        document.documentElement.style.setProperty("--product-buy-shift", "0px");
+        return;
+      }
+
+      const desiredLeft = galleryRect.right + GALLERY_GAP_PX;
+      const currentShift =
+        parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--product-buy-shift",
+          ),
+        ) || 0;
+      const open = document.body.hasAttribute("data-inspired-video-open");
+      const buyLeft = buy.getBoundingClientRect().left;
+      // В открытом состоянии вычитаем текущий сдвиг → «покойная» позиция
+      const restLeft = open ? buyLeft + currentShift : buyLeft;
+      const shift = Math.max(0, Math.round(restLeft - desiredLeft));
+      document.documentElement.style.setProperty(
+        "--product-buy-shift",
+        `${shift}px`,
+      );
+    };
+
+    const syncAll = () => {
+      syncCover();
+      syncBuyShift();
+    };
+
+    // Сначала цифры сдвига, на следующем кадре — атрибут (чтобы сыграл transition)
+    syncAll();
+    shiftFrame = window.requestAnimationFrame(() => {
+      shiftFrame = window.requestAnimationFrame(() => {
+        document.body.setAttribute("data-inspired-video-open", "");
+      });
+    });
+
+    const observer = panel ? new ResizeObserver(syncAll) : null;
+    if (panel && observer) observer.observe(panel);
+    window.addEventListener("resize", syncAll);
+
+    return () => {
+      window.cancelAnimationFrame(shiftFrame);
+      observer?.disconnect();
+      window.removeEventListener("resize", syncAll);
+      document.body.removeAttribute("data-inspired-video-open");
+      document.documentElement.style.removeProperty("--inspired-video-cover");
+      document.documentElement.style.removeProperty("--product-buy-shift");
+    };
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -218,6 +296,7 @@ function InspiredVideoModal({
       aria-label="Просмотр видео"
     >
       <div
+        ref={panelRef}
         className="pointer-events-auto absolute top-[calc(var(--site-header-height,4rem)+0.75rem)] right-3 overflow-hidden rounded-2xl bg-black shadow-[0_12px_40px_rgba(0,0,0,0.28)] sm:right-4 md:right-6"
         style={{
           height: "calc(100dvh - var(--site-header-height, 4rem) - 1.5rem)",
@@ -253,7 +332,6 @@ function InspiredVideoModal({
           ))}
         </div>
 
-        {/* Close — top left, dark circle */}
         <button
           type="button"
           onClick={onClose}
@@ -270,7 +348,6 @@ function InspiredVideoModal({
           </svg>
         </button>
 
-        {/* Vertical nav — right center, stacked circles */}
         <div className="absolute top-1/2 right-3 z-20 flex -translate-y-1/2 flex-col gap-2.5">
           <button
             type="button"
@@ -306,7 +383,6 @@ function InspiredVideoModal({
           </button>
         </div>
 
-        {/* Mute — top right, icon only */}
         <button
           type="button"
           onClick={toggleMute}
@@ -359,7 +435,8 @@ export function ProductInspiredSection({
 }) {
   const { price } = useProductSelection();
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [canScrollMore, setCanScrollMore] = useState(false);
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
   const cardProduct = { ...product, price };
@@ -371,7 +448,8 @@ export function ProductInspiredSection({
   const updateScrollState = () => {
     const el = scrollerRef.current;
     if (!el) return;
-    setCanScrollMore(el.scrollWidth - el.scrollLeft - el.clientWidth > 8);
+    setCanScrollPrev(el.scrollLeft > 8);
+    setCanScrollNext(el.scrollWidth - el.scrollLeft - el.clientWidth > 8);
   };
 
   useEffect(() => {
@@ -387,12 +465,12 @@ export function ProductInspiredSection({
     };
   }, []);
 
-  const scrollNext = () => {
+  const scrollByCard = (direction: -1 | 1) => {
     const el = scrollerRef.current;
     if (!el) return;
     const card = el.querySelector<HTMLElement>("[data-inspired-card]");
     const step = card ? card.offsetWidth + 12 : el.clientWidth * 0.7;
-    el.scrollBy({ left: step, behavior: "smooth" });
+    el.scrollBy({ left: direction * step, behavior: "smooth" });
   };
 
   return (
@@ -427,10 +505,29 @@ export function ProductInspiredSection({
           ))}
         </div>
 
-        {canScrollMore ? (
+        {canScrollPrev ? (
           <button
             type="button"
-            onClick={scrollNext}
+            onClick={() => scrollByCard(-1)}
+            aria-label="Предыдущие видео"
+            className="absolute top-1/2 left-0 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-olive-dark shadow-sm transition-opacity hover:opacity-80"
+          >
+            <svg className="size-4" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M15 6l-6 6 6 6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        ) : null}
+
+        {canScrollNext ? (
+          <button
+            type="button"
+            onClick={() => scrollByCard(1)}
             aria-label="Следующие видео"
             className="absolute top-1/2 right-0 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand-olive-dark shadow-sm transition-opacity hover:opacity-80"
           >

@@ -792,8 +792,12 @@ function GalleryLayout({
     </div>
   );
 
+    // w-fit: блок не на всю колонку — справа воздух до покупки
   return (
-    <div className={`flex min-h-0 items-start gap-3 md:gap-3.5 ${GALLERY_VIEWPORT_MAX_H}`}>
+    <div
+      data-product-gallery
+      className={`flex w-fit max-w-full min-h-0 items-start gap-3.5 md:gap-4 ${GALLERY_VIEWPORT_MAX_H}`}
+    >
       {thumbsPosition === "left" ? (
         <>
           {thumbs}
@@ -1159,11 +1163,12 @@ export function ProductGallery({
           name={name}
           activeIndex={activeIndex}
           onActiveIndexChange={setActiveIndex}
-          thumbClassName="aspect-[3/4] w-full rounded-2xl"
-          mainClassName={`aspect-square w-full rounded-2xl ${GALLERY_VIEWPORT_MAX_H} max-w-[calc(100dvh-var(--site-header-height,4rem)-1.5rem)]`}
+          thumbClassName="aspect-[3/4] w-full rounded-xl"
+          /* Чуть меньше «окна»: левый край на месте, масштаб главного и карусели вниз */
+          mainClassName={`aspect-[4/5] !flex-none w-auto min-h-[360px] h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] max-h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] rounded-xl`}
           mainObjectFit="cover"
-          mainImageSizes="(max-width: 1024px) 100vw, 50vw"
-          thumbImageSizes="(max-width: 1280px) 180px, 220px"
+          mainImageSizes="(max-width: 1024px) 100vw, 48vw"
+          thumbImageSizes="(max-width: 1280px) 140px, 180px"
           mainPriority
           thumbsPosition="right"
           onMainClick={() => setModalOpen(true)}

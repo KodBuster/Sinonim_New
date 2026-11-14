@@ -148,16 +148,29 @@ export async function getProductDetails(
   if (summary) {
     try {
       const product = await loadAdvantShopProductDetails(summary);
+      // Полная карточка из AdvantShop — как есть (галерея тоже оттуда).
       if (product) return product;
     } catch (error) {
       console.error(`AdvantShop product "${slug}" unavailable:`, error);
     }
 
     // Catalog summary is enough to render the card if details API fails.
+    // Если в summary мало фото — берём локальную галерею из static (для вёрстки карусели).
+    const staticDetails = getStaticProductDetails(slug);
+    const summaryImages = summary.images?.length
+      ? summary.images
+      : [summary.image];
+    const images =
+      summaryImages.length >= 2
+        ? summaryImages
+        : staticDetails?.images?.length
+          ? staticDetails.images
+          : summaryImages;
+
     return {
       ...summary,
-      description: summary.description ?? "",
-      images: summary.images?.length ? summary.images : [summary.image],
+      description: summary.description ?? staticDetails?.description ?? "",
+      images,
       color: summary.color ?? "",
       clarity: summary.clarity ?? "",
       cut: summary.cut ?? "",

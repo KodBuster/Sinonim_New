@@ -62,8 +62,9 @@ export function ProductPage({
 
       <Suspense fallback={null}>
         <ProductSelectionProvider product={product}>
-          <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
-            <div className="grid items-start gap-x-8 gap-y-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-x-10 xl:gap-x-14">
+          {/* --pdp-pad-right: и поле страницы, и сдвиг колонки при открытом видео */}
+          <div className="w-full pl-[clamp(10px,1.2vw,20px)] pr-[length:var(--pdp-pad-right)] [--pdp-pad-right:clamp(4.25rem,calc(2.35rem+4.25vw),6.5rem)]">
+            <div className="grid items-start gap-x-6 gap-y-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.78fr)] lg:gap-x-10 xl:gap-x-14">
               <div className="min-w-0 lg:sticky lg:top-[var(--site-header-height,0px)] lg:self-start">
                 <div className="mb-3 md:mb-4">
                   <Link
@@ -88,7 +89,7 @@ export function ProductPage({
                 />
               </div>
 
-              <div className="min-w-0">
+              <div className="product-buy-column min-w-0">
                 {product.badge ? (
                   <span
                     className={`mb-3 inline-flex rounded-full px-3 py-1 text-[11px] font-medium tracking-wide ${
@@ -135,7 +136,7 @@ export function ProductPage({
             </div>
           </div>
 
-          <div className="mx-auto max-w-[1440px] px-4 md:px-6 lg:px-8">
+          <div className="w-full pl-[clamp(10px,1.2vw,20px)] pr-[length:var(--pdp-pad-right)] [--pdp-pad-right:clamp(4.25rem,calc(2.35rem+4.25vw),6.5rem)]">
             {related.length > 0 && (
               <div className="mt-16 md:mt-20">
                 <h2 className="mb-6 font-heading text-2xl text-brand-olive-dark md:text-[1.75rem]">

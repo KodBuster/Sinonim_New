@@ -454,3 +454,23 @@ body.mango-chat-open .messenger-fab {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18) !important;
   }
 }
+
+/* Колонка покупки: сдвиг в px считается от реальной дырки до карусели */
+.product-buy-column {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
+  will-change: transform;
+}
+body[data-inspired-video-open] .product-buy-column {
+  transform: translateX(calc(-1 * var(--product-buy-shift, 0px)));
+}
+
+/* Подписи в кнопках: если видео ещё чуть цепляет край после сдвига колонки */
+.product-video-safe-label {
+  padding-right: 1.5rem !important;
+  transition:
+    padding-right 0.45s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.2s ease !important;
+}
+body[data-inspired-video-open] .product-video-safe-label {
+  padding-right: min(28%, calc(var(--inspired-video-cover, 280px) * 0.22)) !important;
+}

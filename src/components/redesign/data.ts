@@ -150,7 +150,7 @@ export const HERO_SLIDES = [
 export const PROMOS = [
   {
     id: "price",
-    title: "Украшения до 15 000 ₽",
+    title: "Украшения до 15\u00A0000\u00A0₽",
     sub: "Маленькие детали. Большие чувства.",
     href: "/shop",
     desktop: `${ASSET}/promos/desktop/promo-price-v01.webp`,

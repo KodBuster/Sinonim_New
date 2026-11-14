@@ -16,6 +16,7 @@
     "sync:1c:force": "node scripts/sync-ftp-to-advantshop.mjs --force"
   },
   "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/playfair-display": "^5.2.8",
     "@tailwindcss/postcss": "^4",
