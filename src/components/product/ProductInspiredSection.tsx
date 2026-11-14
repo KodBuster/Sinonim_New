@@ -118,6 +118,7 @@ function InspiredVideoModal({
   useEffect(() => {
     const panel = panelRef.current;
     let shiftFrame = 0;
+    let instantClearTimer = 0;
     /** Зазор колонка↔карусель ≈ gap main↔thumbs (1rem) */
     const GALLERY_GAP_PX = 16;
 
@@ -129,6 +130,17 @@ function InspiredVideoModal({
         "--inspired-video-cover",
         `${Math.round(fromRight)}px`,
       );
+    };
+
+    /** Реальный translateX сейчас (во время transition ≠ CSS-переменная) */
+    const readActualTx = (el: HTMLElement) => {
+      const raw = getComputedStyle(el).transform;
+      if (!raw || raw === "none") return 0;
+      try {
+        return new DOMMatrixReadOnly(raw).m41;
+      } catch {
+        return 0;
+      }
     };
 
     const syncBuyShift = () => {
@@ -147,16 +159,8 @@ function InspiredVideoModal({
       }
 
       const desiredLeft = galleryRect.right + GALLERY_GAP_PX;
-      const currentShift =
-        parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue(
-            "--product-buy-shift",
-          ),
-        ) || 0;
-      const open = document.body.hasAttribute("data-inspired-video-open");
-      const buyLeft = buy.getBoundingClientRect().left;
-      // В открытом состоянии вычитаем текущий сдвиг → «покойная» позиция
-      const restLeft = open ? buyLeft + currentShift : buyLeft;
+      // Покойная позиция = экранная минус фактический transform (не var!)
+      const restLeft = buy.getBoundingClientRect().left - readActualTx(buy);
       const shift = Math.max(0, Math.round(restLeft - desiredLeft));
       document.documentElement.style.setProperty(
         "--product-buy-shift",
@@ -169,6 +173,16 @@ function InspiredVideoModal({
       syncBuyShift();
     };
 
+    /** Ресайз: без transition, иначе набегает ошибка и колонка уезжает на карусель */
+    const syncAllInstant = () => {
+      document.documentElement.setAttribute("data-inspired-shift-instant", "");
+      syncAll();
+      window.clearTimeout(instantClearTimer);
+      instantClearTimer = window.setTimeout(() => {
+        document.documentElement.removeAttribute("data-inspired-shift-instant");
+      }, 120);
+    };
+
     // Сначала цифры сдвига, на следующем кадре — атрибут (чтобы сыграл transition)
     syncAll();
     shiftFrame = window.requestAnimationFrame(() => {
@@ -177,15 +191,21 @@ function InspiredVideoModal({
       });
     });
 
-    const observer = panel ? new ResizeObserver(syncAll) : null;
-    if (panel && observer) observer.observe(panel);
-    window.addEventListener("resize", syncAll);
+    const gallery = document.querySelector<HTMLElement>("[data-product-gallery]");
+    const buy = document.querySelector<HTMLElement>(".product-buy-column");
+    const observer = new ResizeObserver(syncAllInstant);
+    if (panel) observer.observe(panel);
+    if (gallery) observer.observe(gallery);
+    if (buy) observer.observe(buy);
+    window.addEventListener("resize", syncAllInstant);
 
     return () => {
       window.cancelAnimationFrame(shiftFrame);
-      observer?.disconnect();
-      window.removeEventListener("resize", syncAll);
+      window.clearTimeout(instantClearTimer);
+      observer.disconnect();
+      window.removeEventListener("resize", syncAllInstant);
       document.body.removeAttribute("data-inspired-video-open");
+      document.documentElement.removeAttribute("data-inspired-shift-instant");
       document.documentElement.style.removeProperty("--inspired-video-cover");
       document.documentElement.style.removeProperty("--product-buy-shift");
     };
@@ -266,11 +286,21 @@ function InspiredVideoModal({
 
   const handleBuy = () => {
     onClose();
-    window.requestAnimationFrame(() => {
-      const button = document.querySelector<HTMLButtonElement>("[data-add-to-cart]");
-      button?.scrollIntoView({ behavior: "smooth", block: "center" });
-      button?.focus();
-    });
+    // Ждём сдвиг колонки после закрытия видео, затем вспышка «В корзину»
+    window.setTimeout(() => {
+      const button = document.querySelector<HTMLButtonElement>(
+        ".product-buy-column [data-add-to-cart]",
+      );
+      if (!button) return;
+      button.scrollIntoView({ behavior: "smooth", block: "center" });
+      button.focus({ preventScroll: true });
+      button.classList.remove("cart-btn-attention");
+      void button.offsetWidth;
+      button.classList.add("cart-btn-attention");
+      window.setTimeout(() => {
+        button.classList.remove("cart-btn-attention");
+      }, 1500);
+    }, 480);
   };
 
   const toggleMute = () => {

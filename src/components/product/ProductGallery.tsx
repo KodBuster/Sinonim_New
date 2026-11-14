@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type Ref,
 } from "react";
 import { createPortal } from "react-dom";
 import { ProductImage } from "@/components/catalog/ProductImage";
@@ -14,6 +15,7 @@ import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { useCart } from "@/context/CartContext";
 import { trackAddToCart } from "@/lib/analytics/metrika";
 import { formatPrice, type CategorySlug } from "@/lib/products";
+import { galleryObjectFitForSrc } from "@/lib/product-media";
 import { formatInsertMassLabel } from "@/lib/synthetic-diamond-labels";
 import { useProductSelection } from "./ProductSelectionContext";
 
@@ -58,9 +60,6 @@ type GalleryLayoutProps = {
   /** Missoma-style: thumbs column on the right of the main image */
   thumbsPosition?: "left" | "right";
 };
-
-const MODAL_ICON_BUTTON_CLASS =
-  "opacity-100 bg-brand-sand text-brand-olive-dark hover:text-brand-terracotta w-11 h-11";
 
 function GalleryVideo({
   src,
@@ -147,22 +146,24 @@ function GalleryThumbnails({
   const wheelLockRef = useRef(false);
   const initKeyRef = useRef<string | null>(null);
 
-  const roundedViewport =
+  // Окошко = высота главного кадра (верх↔низ вровень); стрелки снаружи
+  const columnHeight =
     viewportHeight != null && viewportHeight > 0
       ? Math.round(viewportHeight)
       : null;
-  const snapMode = roundedViewport != null;
+  const snapMode = columnHeight != null;
+  const thumbHeight =
+    columnHeight != null && columnHeight > THUMB_PAIR_GAP
+      ? Math.floor((columnHeight - THUMB_PAIR_GAP) / 2)
+      : null;
   const infinite = snapMode && slides.length > 1;
-  const thumbHeight = snapMode
-    ? (roundedViewport - THUMB_PAIR_GAP) / 2
-    : null;
   const thumbWidth = thumbHeight != null ? thumbHeight * 0.75 : null;
   const stepSize =
     thumbHeight != null ? thumbHeight + THUMB_PAIR_GAP : null;
+  // Шаг между началами соседних кадров = h+gap; один «круг» = n шагов
+  // (не n*h+(n-1)*gap — иначе scrollTop попадает в щель и кадры съезжают вниз)
   const setHeight =
-    thumbHeight != null && slides.length > 0
-      ? slides.length * thumbHeight + (slides.length - 1) * THUMB_PAIR_GAP
-      : null;
+    stepSize != null && slides.length > 0 ? slides.length * stepSize : null;
 
   const loopSlides = useMemo(() => {
     if (!infinite) return slides;
@@ -234,20 +235,33 @@ function GalleryThumbnails({
 
   if (slides.length <= 1) return null;
 
-  const viewportStyle: CSSProperties | undefined = snapMode
-    ? {
-        height: roundedViewport ?? undefined,
-        width: thumbWidth ?? undefined,
-      }
-    : style;
-
   return (
     <div
       ref={rootRef}
-      className={`flex shrink-0 flex-col items-center ${thumbListClassName}`}
-      style={snapMode ? { width: thumbWidth ?? undefined } : style}
+      className={`relative flex shrink-0 flex-col items-center overflow-visible ${thumbListClassName}`}
+      style={
+        snapMode
+          ? {
+              width: thumbWidth ?? undefined,
+              height: columnHeight ?? undefined,
+            }
+          : style
+      }
     >
-      <div className="w-full overflow-hidden" style={viewportStyle}>
+      {snapMode ? (
+        <ThumbScrollArrow
+          direction="up"
+          onStep={() => scrollByStep(-1)}
+        />
+      ) : null}
+      <div
+        className="h-full w-full overflow-hidden"
+        style={
+          snapMode
+            ? { height: columnHeight ?? undefined }
+            : style
+        }
+      >
         <div
           ref={listRef}
           className="flex h-full max-h-full flex-col gap-3 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
@@ -265,7 +279,7 @@ function GalleryThumbnails({
                     : `${name} — фото ${realIndex + 1}`
                 }
                 aria-pressed={activeIndex === realIndex}
-                className={`relative shrink-0 overflow-hidden transition-opacity hover:opacity-80 ${
+                className={`relative shrink-0 overflow-hidden bg-white transition-opacity hover:opacity-80 ${
                   snapMode ? "rounded-2xl" : thumbClassName
                 }`}
                 style={
@@ -279,7 +293,7 @@ function GalleryThumbnails({
                     key={`thumb-${slide.src}-${index}`}
                     src={slide.src}
                     label={`Видео ${name}`}
-                    className="h-full w-full object-cover pointer-events-none"
+                    className="h-full w-full object-cover bg-white pointer-events-none"
                     preload="metadata"
                     playing={!isVideoActive}
                   />
@@ -288,7 +302,11 @@ function GalleryThumbnails({
                     src={slide.src}
                     alt=""
                     fill
-                    className="object-cover"
+                    className={
+                      galleryObjectFitForSrc(slide.src) === "cover"
+                        ? "object-cover"
+                        : "object-contain"
+                    }
                     sizes={thumbImageSizes}
                   />
                 )}
@@ -298,16 +316,45 @@ function GalleryThumbnails({
         </div>
       </div>
       {snapMode ? (
-        <button
-          type="button"
-          className="mt-1.5 flex justify-center p-1 text-brand-olive-dark transition-opacity hover:opacity-70"
-          aria-label="Следующие фото"
-          onClick={() => scrollByStep(1)}
-        >
-          <span className="block h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px] border-t-current" />
-        </button>
+        <ThumbScrollArrow
+          direction="down"
+          onStep={() => scrollByStep(1)}
+        />
       ) : null}
     </div>
+  );
+}
+
+/** Стрелка снаружи габаритов карусели: клик + автоскролл на «1» и «3» */
+function ThumbScrollArrow({
+  onStep,
+  direction,
+}: {
+  onStep: () => void;
+  direction: "up" | "down";
+}) {
+  const { start, stop, onClickStep } = useHoverBeatSteps(onStep, true);
+
+  return (
+    <button
+      type="button"
+      className={`absolute left-1/2 z-10 flex h-5 w-8 -translate-x-1/2 items-center justify-center text-brand-olive-dark transition-opacity hover:opacity-70 ${
+        direction === "up" ? "-top-5" : "-bottom-5"
+      }`}
+      aria-label={direction === "up" ? "Предыдущие фото" : "Следующие фото"}
+      onClick={onClickStep}
+      onMouseEnter={start}
+      onMouseLeave={stop}
+      onBlur={stop}
+    >
+      <span
+        className={`block h-0 w-0 border-x-[5px] border-x-transparent ${
+          direction === "up"
+            ? "border-b-[7px] border-b-current"
+            : "border-t-[7px] border-t-current"
+        }`}
+      />
+    </button>
   );
 }
 
@@ -331,7 +378,7 @@ function GalleryMainMedia({
         src={slide.src}
         label={`Видео — ${name}`}
         className={`absolute inset-0 h-full w-full ${
-          objectFit === "cover" ? "object-cover bg-brand-surface" : "object-contain bg-brand-surface"
+          objectFit === "cover" ? "object-cover bg-white" : "object-contain bg-white"
         }`}
         playing
       />
@@ -354,6 +401,87 @@ function GalleryMainMedia({
 const GALLERY_ARROW_CLASS =
   "absolute bottom-4 z-10 flex h-12 w-12 items-center justify-center rounded-full border border-white/35 bg-brand-terracotta/95 text-white shadow-[0_8px_24px_rgba(212,119,80,0.35)] backdrop-blur-[2px] transition-all duration-200 hover:border-white/50 hover:bg-brand-terracotta-logo hover:shadow-[0_10px_28px_rgba(201,106,74,0.42)] hover:scale-105 active:scale-95 disabled:pointer-events-none disabled:opacity-40";
 
+/**
+ * Клик всегда листает.
+ * Авто (1 и 3) — только после паузы без кликов, пока курсор на стрелке.
+ */
+function useHoverBeatSteps(onStep: () => void, enabled: boolean) {
+  const AUTO_DELAY_MS = 700;
+  const BEAT_MS = 1160;
+  const CLICK_GAP_MS = 400;
+
+  const beatTimerRef = useRef<number | null>(null);
+  const delayTimerRef = useRef<number | null>(null);
+  const lastStepAtRef = useRef(0);
+  const hoveringRef = useRef(false);
+
+  const clearBeat = useCallback(() => {
+    if (beatTimerRef.current != null) {
+      window.clearInterval(beatTimerRef.current);
+      beatTimerRef.current = null;
+    }
+  }, []);
+
+  const clearDelay = useCallback(() => {
+    if (delayTimerRef.current != null) {
+      window.clearTimeout(delayTimerRef.current);
+      delayTimerRef.current = null;
+    }
+  }, []);
+
+  const stopAll = useCallback(() => {
+    hoveringRef.current = false;
+    clearBeat();
+    clearDelay();
+  }, [clearBeat, clearDelay]);
+
+  const guardedStep = useCallback(() => {
+    const now = Date.now();
+    if (now - lastStepAtRef.current < CLICK_GAP_MS) return;
+    lastStepAtRef.current = now;
+    onStep();
+  }, [CLICK_GAP_MS, onStep]);
+
+  const armAuto = useCallback(() => {
+    clearDelay();
+    clearBeat();
+    if (!enabled || !hoveringRef.current) return;
+
+    delayTimerRef.current = window.setTimeout(() => {
+      delayTimerRef.current = null;
+      if (!hoveringRef.current) return;
+      // Первый автошаг после паузы, дальше — на «1» и «3»
+      guardedStep();
+      beatTimerRef.current = window.setInterval(() => {
+        if (!hoveringRef.current) return;
+        guardedStep();
+      }, BEAT_MS);
+    }, AUTO_DELAY_MS);
+  }, [AUTO_DELAY_MS, BEAT_MS, clearBeat, clearDelay, enabled, guardedStep]);
+
+  const onHoverStart = useCallback(() => {
+    if (!enabled) return;
+    hoveringRef.current = true;
+    armAuto();
+  }, [armAuto, enabled]);
+
+  const onClickStep = useCallback(() => {
+    if (!enabled) {
+      onStep();
+      return;
+    }
+    // Клик: шаг сразу, авто паузим и перезапускаем таймер тишины
+    clearBeat();
+    clearDelay();
+    guardedStep();
+    if (hoveringRef.current) armAuto();
+  }, [armAuto, clearBeat, clearDelay, enabled, guardedStep, onStep]);
+
+  useEffect(() => () => stopAll(), [stopAll]);
+
+  return { start: onHoverStart, stop: stopAll, onClickStep };
+}
+
 function GalleryNavArrow({
   direction,
   onClick,
@@ -365,13 +493,18 @@ function GalleryNavArrow({
   disabled: boolean;
   label: string;
 }) {
+  const { start, stop, onClickStep } = useHoverBeatSteps(onClick, !disabled);
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={onClickStep}
       disabled={disabled}
       aria-label={label}
       className={`${GALLERY_ARROW_CLASS} ${direction === "prev" ? "left-4" : "right-4"}`}
+      onMouseEnter={start}
+      onMouseLeave={stop}
+      onBlur={stop}
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
         <path
@@ -646,7 +779,7 @@ function MobileProductGallery({
       )}
 
       <div
-        className="relative mx-1 aspect-square overflow-hidden rounded-xl bg-brand-surface touch-pan-y"
+        className="relative mx-1 aspect-square overflow-hidden rounded-xl bg-white touch-pan-y"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -654,7 +787,7 @@ function MobileProductGallery({
           <GalleryMainMedia
             slide={activeSlide}
             name={name}
-            objectFit="cover"
+            objectFit={galleryObjectFitForSrc(activeSlide.src, "video")}
             imageSizes="(max-width: 768px) 92vw, 50vw"
             priority
           />
@@ -674,7 +807,7 @@ function MobileProductGallery({
             <GalleryMainMedia
               slide={activeSlide}
               name={name}
-              objectFit="cover"
+              objectFit={galleryObjectFitForSrc(activeSlide.src)}
               imageSizes="(max-width: 768px) 92vw, 50vw"
               priority
             />
@@ -740,6 +873,25 @@ function GalleryLayout({
     mainObserverRef.current = observer;
   }, []);
 
+  // Ширина галереи «как есть» → PDP знает, когда колонка покупки должна уйти вниз
+  useEffect(() => {
+    if (thumbsHeight == null || thumbsHeight < 8) return;
+
+    const GALLERY_MAIN_THUMBS_GAP = 16; // md:gap-4 = X
+    const mainW = thumbsHeight * 0.8; // aspect 4/5
+    const thumbW =
+      Math.floor((thumbsHeight - THUMB_PAIR_GAP) / 2) * 0.75;
+    const basis = Math.ceil(mainW + GALLERY_MAIN_THUMBS_GAP + thumbW);
+    document.documentElement.style.setProperty(
+      "--pdp-gallery-basis",
+      `${basis}px`,
+    );
+
+    return () => {
+      document.documentElement.style.removeProperty("--pdp-gallery-basis");
+    };
+  }, [thumbsHeight]);
+
   useEffect(() => {
     return () => {
       mainObserverRef.current?.disconnect();
@@ -749,11 +901,17 @@ function GalleryLayout({
 
   if (!activeSlide) return null;
 
+  // Студия — contain; лайф (-life/-look/-model) и видео — cover на всю ячейку
+  const resolvedObjectFit =
+    activeSlide.type === "video"
+      ? galleryObjectFitForSrc(activeSlide.src, "video")
+      : galleryObjectFitForSrc(activeSlide.src);
+
   const mainPanel = (
     <GalleryMainMedia
       slide={activeSlide}
       name={name}
-      objectFit={mainObjectFit}
+      objectFit={resolvedObjectFit}
       imageSizes={mainImageSizes}
       priority={mainPriority}
     />
@@ -778,7 +936,7 @@ function GalleryLayout({
       ref={setMainNode}
       type="button"
       onClick={onMainClick}
-      className={`relative min-w-0 flex-1 overflow-hidden bg-[#f5f4f1] cursor-zoom-in ${mainClassName}`}
+      className={`relative min-w-0 flex-1 overflow-hidden bg-white cursor-zoom-in ${mainClassName}`}
       aria-label="Открыть галерею в полном размере"
     >
       {mainPanel}
@@ -786,7 +944,7 @@ function GalleryLayout({
   ) : (
     <div
       ref={setMainNode}
-      className={`relative min-w-0 flex-1 overflow-hidden bg-[#f5f4f1] ${mainClassName}`}
+      className={`relative min-w-0 flex-1 overflow-hidden bg-white ${mainClassName}`}
     >
       {mainPanel}
     </div>
@@ -796,7 +954,7 @@ function GalleryLayout({
   return (
     <div
       data-product-gallery
-      className={`flex w-fit max-w-full min-h-0 items-start gap-3.5 md:gap-4 ${GALLERY_VIEWPORT_MAX_H}`}
+      className={`flex w-fit max-w-full min-w-0 items-start gap-3.5 overflow-visible md:gap-4 ${GALLERY_VIEWPORT_MAX_H}`}
     >
       {thumbsPosition === "left" ? (
         <>
@@ -813,6 +971,57 @@ function GalleryLayout({
   );
 }
 
+type ModalThumbsColumnProps = {
+  slides: GallerySlide[];
+  name: string;
+  activeIndex: number;
+  onActiveIndexChange: (index: number) => void;
+};
+
+/** Левая карусель модалки: зацикленный скролл, размер окошек как на PDP */
+function ModalThumbsColumn({
+  slides,
+  name,
+  activeIndex,
+  onActiveIndexChange,
+}: ModalThumbsColumnProps) {
+  const columnRef = useRef<HTMLDivElement>(null);
+  const [thumbsHeight, setThumbsHeight] = useState<number | null>(null);
+  const activeSlide = slides[activeIndex] ?? slides[0];
+  const isVideoActive = activeSlide?.type === "video";
+
+  useEffect(() => {
+    const node = columnRef.current;
+    if (!node) return;
+
+    // Полная высота колонки: стрелки вверх/вниз вычитает GalleryThumbnails
+    const update = () => {
+      const next = Math.max(0, Math.round(node.getBoundingClientRect().height));
+      setThumbsHeight((prev) => (prev === next ? prev : next));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={columnRef} className="relative flex min-h-0 shrink-0 self-stretch overflow-visible">
+      <GalleryThumbnails
+        slides={slides}
+        name={name}
+        activeIndex={activeIndex}
+        onActiveIndexChange={onActiveIndexChange}
+        thumbClassName="aspect-[3/4] w-full rounded-xl"
+        thumbImageSizes="120px"
+        isVideoActive={Boolean(isVideoActive)}
+        thumbListClassName="max-h-full self-start"
+        viewportHeight={thumbsHeight}
+      />
+    </div>
+  );
+}
+
 type ModalGalleryViewProps = {
   slides: GallerySlide[];
   name: string;
@@ -820,105 +1029,293 @@ type ModalGalleryViewProps = {
   onActiveIndexChange: (index: number) => void;
   onGoPrev: () => void;
   onGoNext: () => void;
+  hideThumbs?: boolean;
 };
 
 function ModalGalleryView({
   slides,
   name,
   activeIndex,
-  onActiveIndexChange,
   onGoPrev,
   onGoNext,
-}: ModalGalleryViewProps) {
+  tvFrameRef,
+}: ModalGalleryViewProps & {
+  tvFrameRef?: Ref<HTMLDivElement>;
+}) {
   const activeSlide = slides[activeIndex] ?? slides[0];
-  const isVideoActive = activeSlide?.type === "video";
   const hasMultipleSlides = slides.length > 1;
 
   if (!activeSlide) return null;
 
+  const activeFit =
+    activeSlide.type === "video"
+      ? galleryObjectFitForSrc(activeSlide.src, "video")
+      : galleryObjectFitForSrc(activeSlide.src);
+
   return (
-    <div className="flex min-h-0 flex-1 gap-3 md:gap-4 overflow-hidden">
-      <GalleryThumbnails
-        slides={slides}
-        name={name}
-        activeIndex={activeIndex}
-        onActiveIndexChange={onActiveIndexChange}
-        thumbClassName="h-16 w-16 md:h-20 md:w-20 lg:h-24 lg:w-24"
-        thumbImageSizes="96px"
-        isVideoActive={isVideoActive}
-        thumbListClassName="max-h-full self-center"
-      />
+    <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+        <div
+          ref={tvFrameRef}
+          className="relative aspect-square h-full max-h-full max-w-full w-auto overflow-hidden rounded-xl bg-white"
+        >
+          <GalleryMainMedia
+            slide={activeSlide}
+            name={name}
+            objectFit={activeFit}
+            imageSizes="(max-width: 1024px) 90vw, 60vw"
+          />
 
-      <div className="relative min-h-0 min-w-0 flex-1">
-        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-          <div className="relative aspect-square h-full max-h-full max-w-full w-auto overflow-hidden rounded-xl bg-brand-surface">
-            <GalleryMainMedia
-              slide={activeSlide}
-              name={name}
-              objectFit="contain"
-              imageSizes="(max-width: 1024px) 90vw, 60vw"
-            />
-
-            {hasMultipleSlides && (
-              <>
-                <GalleryNavArrow
-                  direction="prev"
-                  onClick={onGoPrev}
-                  disabled={false}
-                  label="Предыдущее фото"
-                />
-                <GalleryNavArrow
-                  direction="next"
-                  onClick={onGoNext}
-                  disabled={false}
-                  label="Следующее фото"
-                />
-              </>
-            )}
-          </div>
+          {hasMultipleSlides && (
+            <>
+              <GalleryNavArrow
+                direction="prev"
+                onClick={onGoPrev}
+                disabled={false}
+                label="Предыдущее фото"
+              />
+              <GalleryNavArrow
+                direction="next"
+                onClick={onGoNext}
+                disabled={false}
+                label="Следующее фото"
+              />
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-function ModalThumbColumnSpacer({ visible }: { visible: boolean }) {
-  if (!visible) return null;
-
-  return (
-    <div
-      className="h-16 w-16 shrink-0 md:h-20 md:w-20 lg:h-24 lg:w-24"
-      aria-hidden
-    />
-  );
+function modalProductTagline(category: CategorySlug) {
+  switch (category) {
+    case "rings":
+      return "Кольцо из серебра 925 — для повседневных сочетаний";
+    case "earrings":
+      return "Серьги из серебра 925 с огранённым синтетическим алмазом";
+    case "pendants":
+      return "Колье из серебра 925 с огранённым синтетическим алмазом";
+    case "bracelets":
+      return "Браслет из серебра 925 с огранённым синтетическим алмазом";
+    default:
+      return "Украшение из серебра 925 с огранённым синтетическим алмазом";
+  }
 }
 
 type ProductGalleryModalFooterProps = {
-  slides: GallerySlide[];
   slug: string;
   name: string;
   productImage: string;
   category: CategorySlug;
-  stoneWeight: number;
-  stoneLabel: string;
   inStock?: boolean;
 };
 
-function ProductGalleryModalFooter({
-  slides,
+/**
+ * Курсор-корзина: заливается только кузов (от днища кверху).
+ * Колёса и ручка — только контур, в заливку не входят.
+ */
+function cartCursorCss(progress: number): string {
+  const p = Math.max(0, Math.min(1, progress));
+  // Границы кузова в viewBox (без колёс y≈19.5)
+  const bodyTop = 6.6;
+  const bodyBottom = 17.3;
+  const bodyH = bodyBottom - bodyTop;
+  const clipH = bodyH * p;
+  const clipY = bodyBottom - clipH;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24">
+  <defs>
+    <clipPath id="rise"><rect x="5" y="${clipY.toFixed(2)}" width="16" height="${clipH.toFixed(2)}"/></clipPath>
+  </defs>
+  <path d="M6.4 6.8h13.8l-2 7.2H7.8L6.4 6.8Z" fill="#ffffff"/>
+  <path d="M7.8 14h10.4l.9 3.2H7.2L7.8 14Z" fill="#ffffff"/>
+  <g clip-path="url(#rise)">
+    <path d="M6.4 6.8h13.8l-2 7.2H7.8L6.4 6.8Z" fill="#1a1a1a"/>
+    <path d="M7.8 14h10.4l.9 3.2H7.2L7.8 14Z" fill="#1a1a1a"/>
+  </g>
+  <path d="M3 4h1.8l1.1 2.2L7.8 14h10.4l2-7.2H6.4" fill="none" stroke="#1a1a1a" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7.8 14h10.4l.9 3.2H7.2L7.8 14Z" fill="none" stroke="#1a1a1a" stroke-width="1.25" stroke-linejoin="round"/>
+  <circle cx="9.5" cy="19.5" r="1.25" fill="none" stroke="#1a1a1a" stroke-width="1.25"/>
+  <circle cx="16.5" cy="19.5" r="1.25" fill="none" stroke="#1a1a1a" stroke-width="1.25"/>
+</svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 4 4, pointer`;
+}
+
+/**
+ * «Купить»: секунда паузы → курсор-корзина, плавная заливка; увести — отмена.
+ * Курсор обновляем через DOM (без setState на каждом кадре) — без ступеней.
+ */
+function HoverConfirmBuyButton({
+  disabled,
+  label,
+  doneLabel,
+  onConfirm,
+  className = "",
+}: {
+  disabled: boolean;
+  label: string;
+  doneLabel: string;
+  onConfirm: () => void;
+  className?: string;
+}) {
+  const DELAY_MS = 1000;
+  const HOLD_MS = 2200;
+
+  const [phase, setPhase] = useState<"idle" | "pending" | "hold" | "done">(
+    "idle",
+  );
+  const [ariaPct, setAriaPct] = useState(0);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const rafRef = useRef<number | null>(null);
+  const delayTimerRef = useRef<number | null>(null);
+  const startRef = useRef<number | null>(null);
+  const confirmedRef = useRef(false);
+  const doneTimerRef = useRef<number | null>(null);
+  const lastAriaRef = useRef(-1);
+
+  const applyCursor = useCallback((value: string) => {
+    if (buttonRef.current) buttonRef.current.style.cursor = value;
+  }, []);
+
+  const stopRaf = useCallback(() => {
+    if (rafRef.current != null) {
+      window.cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    startRef.current = null;
+  }, []);
+
+  const clearDelay = useCallback(() => {
+    if (delayTimerRef.current != null) {
+      window.clearTimeout(delayTimerRef.current);
+      delayTimerRef.current = null;
+    }
+  }, []);
+
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
+  const cancelHold = useCallback(() => {
+    if (phaseRef.current !== "pending" && phaseRef.current !== "hold") return;
+    clearDelay();
+    stopRaf();
+    confirmedRef.current = false;
+    lastAriaRef.current = -1;
+    setAriaPct(0);
+    setPhase("idle");
+    applyCursor(disabled ? "not-allowed" : "pointer");
+  }, [applyCursor, clearDelay, disabled, stopRaf]);
+
+  const markDone = useCallback(() => {
+    setPhase("done");
+    setAriaPct(100);
+    applyCursor(cartCursorCss(1));
+    if (doneTimerRef.current != null) window.clearTimeout(doneTimerRef.current);
+    doneTimerRef.current = window.setTimeout(() => {
+      setPhase("idle");
+      setAriaPct(0);
+      lastAriaRef.current = -1;
+      applyCursor(disabled ? "not-allowed" : "pointer");
+      doneTimerRef.current = null;
+    }, 2800);
+  }, [applyCursor, disabled]);
+
+  const tick = useCallback(() => {
+    if (startRef.current == null) return;
+    const raw = Math.min(1, (performance.now() - startRef.current) / HOLD_MS);
+    applyCursor(cartCursorCss(raw));
+    const pct = Math.round(raw * 100);
+    if (pct !== lastAriaRef.current) {
+      lastAriaRef.current = pct;
+      setAriaPct(pct);
+    }
+    if (raw >= 1) {
+      rafRef.current = null;
+      startRef.current = null;
+      if (!confirmedRef.current) {
+        confirmedRef.current = true;
+        onConfirm();
+        markDone();
+      }
+      return;
+    }
+    rafRef.current = window.requestAnimationFrame(tick);
+  }, [HOLD_MS, applyCursor, markDone, onConfirm]);
+
+  const beginHold = useCallback(() => {
+    if (disabled) return;
+    clearDelay();
+    stopRaf();
+    confirmedRef.current = false;
+    lastAriaRef.current = -1;
+    setAriaPct(0);
+    setPhase("pending");
+    applyCursor("pointer");
+    delayTimerRef.current = window.setTimeout(() => {
+      delayTimerRef.current = null;
+      if (phaseRef.current !== "pending") return;
+      setPhase("hold");
+      applyCursor(cartCursorCss(0));
+      startRef.current = performance.now();
+      rafRef.current = window.requestAnimationFrame(tick);
+    }, DELAY_MS);
+  }, [DELAY_MS, applyCursor, clearDelay, disabled, stopRaf, tick]);
+
+  useEffect(
+    () => () => {
+      clearDelay();
+      stopRaf();
+      if (doneTimerRef.current != null) window.clearTimeout(doneTimerRef.current);
+    },
+    [clearDelay, stopRaf],
+  );
+
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      data-add-to-cart
+      disabled={disabled}
+      onClick={() => {
+        if (disabled) return;
+        clearDelay();
+        stopRaf();
+        confirmedRef.current = true;
+        onConfirm();
+        markDone();
+      }}
+      onMouseEnter={beginHold}
+      onMouseLeave={cancelHold}
+      onBlur={cancelHold}
+      aria-label={
+        phase === "hold"
+          ? `Покупка ${ariaPct}%. Уберите курсор, чтобы отменить`
+          : phase === "pending"
+            ? "Удерживайте курсор для покупки. Уберите, чтобы отменить"
+            : label
+      }
+      style={{ cursor: disabled ? "not-allowed" : "pointer" }}
+      className={`inline-flex items-center justify-center px-6 py-3.5 bg-brand-terracotta hover:bg-brand-terracotta-logo disabled:opacity-50 text-white text-sm tracking-widest uppercase transition-colors whitespace-nowrap ${className}`}
+    >
+      {disabled ? "Скоро будет" : phase === "done" ? doneLabel : label}
+    </button>
+  );
+}
+
+/** «Купить» + избранное — в шапке у крестика */
+function ProductGalleryModalActions({
   slug,
   name,
   productImage,
   category,
   inStock = true,
 }: ProductGalleryModalFooterProps) {
-  const [added, setAdded] = useState(false);
   const { addItem } = useCart();
-  const { selectedSize, selectedSizeLabel, artNo, price: selectedPrice, diamondWeight, diamondWeightLabel } =
+  const { selectedSize, selectedSizeLabel, artNo, price: selectedPrice, diamondWeight } =
     useProductSelection();
   const cartStoneLabel = formatInsertMassLabel(diamondWeight);
 
-  const handleBuy = () => {
+  const handleBuy = useCallback(() => {
     if (!inStock) return;
 
     const variant = [
@@ -945,31 +1342,57 @@ function ProductGalleryModalFooter({
       category,
       variant: variant || undefined,
     });
-    setAdded(true);
-    window.setTimeout(() => setAdded(false), 3000);
-  };
+  }, [
+    addItem,
+    artNo,
+    cartStoneLabel,
+    category,
+    diamondWeight,
+    inStock,
+    name,
+    productImage,
+    selectedPrice,
+    selectedSize,
+    selectedSizeLabel,
+    slug,
+  ]);
 
   return (
-    <div className="flex shrink-0 gap-3 border-t border-brand-sand pt-4 md:gap-4">
-      <ModalThumbColumnSpacer visible={slides.length > 1} />
-      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-4">
-        <p className="font-heading text-2xl md:text-3xl text-brand-olive-dark">
-          {formatPrice(selectedPrice)}
-        </p>
+    <div className="flex items-center gap-2">
+      <HoverConfirmBuyButton
+        disabled={!inStock}
+        label="Купить"
+        doneLabel="Добавлено ✓"
+        onConfirm={handleBuy}
+        className="!px-5 !py-2.5 text-xs"
+      />
+      <FavoriteButton
+        slug={slug}
+        variant="icon-plain"
+        iconSize={24}
+        className="h-10 w-10 shrink-0 text-brand-olive-dark hover:text-brand-terracotta"
+      />
+    </div>
+  );
+}
 
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            data-add-to-cart
-            onClick={handleBuy}
-            disabled={!inStock}
-            className="px-6 py-3.5 bg-brand-terracotta hover:bg-brand-terracotta-logo disabled:cursor-not-allowed disabled:opacity-50 text-white text-sm tracking-widest uppercase transition-colors whitespace-nowrap"
-          >
-            {!inStock ? "Скоро будет" : added ? "Добавлено ✓" : "Купить"}
-          </button>
-          <FavoriteButton slug={slug} className={MODAL_ICON_BUTTON_CLASS} />
-        </div>
-      </div>
+function ProductGalleryModalFooter({
+  priceInset = 0,
+}: {
+  /** Отступ слева = левый край «ТВ» */
+  priceInset?: number;
+}) {
+  const { price: selectedPrice } = useProductSelection();
+
+  return (
+    <div
+      className="flex shrink-0 items-center border-t border-brand-sand pt-4"
+      style={{ paddingLeft: priceInset > 0 ? priceInset : undefined }}
+    >
+      {/* Тот же heading, что у названия, чуть мельче */}
+      <p className="font-heading text-base leading-tight text-brand-olive-dark md:text-lg">
+        {formatPrice(selectedPrice)}
+      </p>
     </div>
   );
 }
@@ -995,7 +1418,7 @@ function ProductGalleryModal({
   onClose,
   slides,
   name,
-  activeIndex,
+  activeIndex: pageActiveIndex,
   onActiveIndexChange,
   slug,
   price,
@@ -1006,19 +1429,63 @@ function ProductGalleryModal({
   inStock = true,
 }: ProductGalleryModalProps) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const rightColumnRef = useRef<HTMLDivElement>(null);
+  const tvFrameRef = useRef<HTMLDivElement>(null);
+  const [priceInset, setPriceInset] = useState(0);
+  // Свой индекс: листание в «ТВ» не дёргает большую картинку на фоне
+  const [modalIndex, setModalIndex] = useState(pageActiveIndex);
+  const modalIndexRef = useRef(modalIndex);
+  modalIndexRef.current = modalIndex;
+
+  // Цена по вертикали с левым краем большого окна «ТВ»
+  useEffect(() => {
+    if (!open) return;
+    const column = rightColumnRef.current;
+    const frame = tvFrameRef.current;
+    if (!column || !frame) return;
+
+    const update = () => {
+      const next = Math.max(
+        0,
+        Math.round(frame.getBoundingClientRect().left - column.getBoundingClientRect().left),
+      );
+      setPriceInset((prev) => (prev === next ? prev : next));
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(column);
+    observer.observe(frame);
+    window.addEventListener("resize", update);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [open, modalIndex]);
+
+  useEffect(() => {
+    if (open) setModalIndex(pageActiveIndex);
+  }, [open, pageActiveIndex]);
 
   const goPrev = useCallback(() => {
-    onActiveIndexChange((activeIndex - 1 + slides.length) % slides.length);
-  }, [activeIndex, onActiveIndexChange, slides.length]);
+    const i = modalIndexRef.current;
+    setModalIndex((i - 1 + slides.length) % slides.length);
+  }, [slides.length]);
 
   const goNext = useCallback(() => {
-    onActiveIndexChange((activeIndex + 1) % slides.length);
-  }, [activeIndex, onActiveIndexChange, slides.length]);
+    const i = modalIndexRef.current;
+    setModalIndex((i + 1) % slides.length);
+  }, [slides.length]);
+
+  const handleClose = useCallback(() => {
+    // При закрытии синхронизируем фон с последним кадром в «ТВ»
+    onActiveIndexChange(modalIndexRef.current);
+    onClose();
+  }, [onActiveIndexChange, onClose]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        onClose();
+        handleClose();
         return;
       }
 
@@ -1034,7 +1501,7 @@ function ProductGalleryModal({
         goNext();
       }
     },
-    [goNext, goPrev, onClose, slides.length],
+    [goNext, goPrev, handleClose, slides.length],
   );
 
   useEffect(() => {
@@ -1061,7 +1528,7 @@ function ProductGalleryModal({
       <button
         type="button"
         className="absolute inset-0 bg-black/70"
-        onClick={onClose}
+        onClick={handleClose}
         aria-label="Закрыть галерею"
       />
 
@@ -1069,14 +1536,21 @@ function ProductGalleryModal({
         role="dialog"
         aria-modal="true"
         aria-label={`Галерея — ${name}`}
-        className="relative z-10 flex h-[min(92vh,900px)] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-brand-surface shadow-2xl"
+        className="relative z-10 flex h-[min(95vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-xl bg-brand-surface shadow-2xl"
       >
-        <div className="flex shrink-0 items-center justify-end border-b border-brand-sand px-4 py-3 md:px-6">
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-2 md:top-4 md:right-4">
+          <ProductGalleryModalActions
+            slug={slug}
+            name={name}
+            productImage={productImage}
+            category={category}
+            inStock={inStock}
+          />
           <button
             ref={closeButtonRef}
             type="button"
-            onClick={onClose}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-brand-muted transition-colors hover:bg-brand-sand hover:text-brand-terracotta-dark"
+            onClick={handleClose}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-brand-muted transition-colors hover:bg-brand-sand hover:text-brand-terracotta-dark"
             aria-label="Закрыть"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -1090,26 +1564,42 @@ function ProductGalleryModal({
           </button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-4 md:p-6">
-          <ModalGalleryView
-            slides={slides}
-            name={name}
-            activeIndex={activeIndex}
-            onActiveIndexChange={onActiveIndexChange}
-            onGoPrev={goPrev}
-            onGoNext={goNext}
-          />
+        <div className="flex min-h-0 flex-1 gap-3 overflow-hidden p-4 md:gap-4 md:p-6">
+          {/* Карусель на всю высоту — зацикленный скролл; шапка справа совпадает с левым краем «ТВ» */}
+          {slides.length > 1 ? (
+            <ModalThumbsColumn
+              slides={slides}
+              name={name}
+              activeIndex={modalIndex}
+              onActiveIndexChange={setModalIndex}
+            />
+          ) : null}
 
-          <ProductGalleryModalFooter
-            slides={slides}
-            slug={slug}
-            name={name}
-            productImage={productImage}
-            category={category}
-            stoneWeight={stoneWeight}
-            stoneLabel={stoneLabel}
-            inStock={inStock}
-          />
+          <div
+            ref={rightColumnRef}
+            className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+          >
+            <div className="mb-3 shrink-0 border-b border-brand-sand pb-3 pr-[min(42%,18rem)]">
+              <h2 className="font-heading text-lg leading-tight text-brand-olive-dark md:text-xl">
+                {name}
+              </h2>
+              <p className="mt-1 text-sm text-brand-muted md:text-[15px]">
+                {modalProductTagline(category)}
+              </p>
+            </div>
+
+            <ModalGalleryView
+              slides={slides}
+              name={name}
+              activeIndex={modalIndex}
+              onActiveIndexChange={setModalIndex}
+              onGoPrev={goPrev}
+              onGoNext={goNext}
+              tvFrameRef={tvFrameRef}
+            />
+
+            <ProductGalleryModalFooter priceInset={priceInset} />
+          </div>
         </div>
       </div>
     </div>,
@@ -1164,11 +1654,11 @@ export function ProductGallery({
           activeIndex={activeIndex}
           onActiveIndexChange={setActiveIndex}
           thumbClassName="aspect-[3/4] w-full rounded-xl"
-          /* Чуть меньше «окна»: левый край на месте, масштаб главного и карусели вниз */
-          mainClassName={`aspect-[4/5] !flex-none w-auto min-h-[360px] h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] max-h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] rounded-xl`}
-          mainObjectFit="cover"
-          mainImageSizes="(max-width: 1024px) 100vw, 48vw"
-          thumbImageSizes="(max-width: 1280px) 140px, 180px"
+          /* Высота от вьюпорта, ширина не шире колонки — иначе наезд на покупку до брейкпоинта */
+          mainClassName={`aspect-[4/5] !flex-none w-auto max-w-full min-h-[280px] h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] max-h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] rounded-xl`}
+          mainObjectFit="contain"
+          mainImageSizes="(max-width: 1280px) 100vw, 48vw"
+          thumbImageSizes="(max-width: 1280px) 120px, 180px"
           mainPriority
           thumbsPosition="right"
           onMainClick={() => setModalOpen(true)}

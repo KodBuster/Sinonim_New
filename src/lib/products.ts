@@ -21,6 +21,8 @@ export type Product = {
   manufacturer?: string;
   description?: string;
   images?: string[];
+  /** URL видео для слайда в галерее (если нет файла по artNo). */
+  videoUrl?: string;
   color?: string;
   clarity?: string;
   cut?: string;
@@ -139,15 +141,18 @@ export const PRODUCTS: Product[] = [
     category: "rings",
     price: 24900,
     image: "/images/product-bracelet.webp",
-    // Временная локальная галерея для вёрстки карусели, пока AdvantShop не отдаёт фото.
-    // Когда details из AdvantShop работают — используются их images, этот массив не мешает.
+    // Временная локальная галерея для вёрстки, пока AdvantShop не отдаёт фото.
+    // Суффикс -life/-look/-model → лайф (cover); без суффикса → студия (contain).
     images: [
-      "/images/product-bracelet.webp",
-      "/images/product-ring.webp",
-      "/images/product-earrings.webp",
-      "/images/product-necklace.webp",
-      "/images/showroom.jpg.jpg",
+      "/images/product-bracelet.webp", // студия
+      "/images/product-ring.webp", // студия
+      "/images/product-earrings.webp", // студия
+      "/images/product-necklace-life.webp", // лайф-образец (девушка)
+      "/images/showroom-life.jpg.jpg", // лайф-образец (комната)
+      "/images/show_room_2-life.jpg", // лайф-образец (комната)
     ],
+    // Временно: ролик из public/images, чтобы увидеть видео-слайд в карусели
+    videoUrl: "/images/braslet_video_3.mp4",
     stoneWeight: 0.2,
     badge: "Хит",
   },

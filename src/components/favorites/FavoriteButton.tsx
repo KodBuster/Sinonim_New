@@ -6,6 +6,8 @@ type FavoriteButtonProps = {
   slug: string;
   variant?: "icon" | "icon-plain" | "text";
   className?: string;
+  /** Размер иконки сердца в px */
+  iconSize?: number;
 };
 
 function IconHeart({
@@ -32,6 +34,7 @@ export function FavoriteButton({
   slug,
   variant = "icon",
   className = "",
+  iconSize,
 }: FavoriteButtonProps) {
   const { isFavorite, toggleItem, isReady } = useFavorites();
   const active = isFavorite(slug);
@@ -56,7 +59,7 @@ export function FavoriteButton({
         aria-pressed={active}
         aria-label={active ? "Убрать из избранного" : "Добавить в избранное"}
       >
-        <IconHeart active={active} />
+        <IconHeart active={active} size={iconSize ?? 16} />
         {active ? "В избранном" : "Добавить в избранное"}
       </button>
     );
@@ -77,7 +80,7 @@ export function FavoriteButton({
         aria-label={active ? "Убрать из избранного" : "Добавить в избранное"}
         title={active ? "Убрать из избранного" : "Добавить в избранное"}
       >
-        <IconHeart active={active} size={28} />
+        <IconHeart active={active} size={iconSize ?? 28} />
       </button>
     );
   }
@@ -96,7 +99,7 @@ export function FavoriteButton({
       aria-label={active ? "Убрать из избранного" : "Добавить в избранное"}
       title={active ? "Убрать из избранного" : "Добавить в избранное"}
     >
-      <IconHeart active={active} />
+      <IconHeart active={active} size={iconSize ?? 16} />
     </button>
   );
 }

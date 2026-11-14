@@ -171,6 +171,8 @@ export async function getProductDetails(
       ...summary,
       description: summary.description ?? staticDetails?.description ?? "",
       images,
+      // Локальный videoUrl для вёрстки, если у summary нет своего ролика по artNo
+      videoUrl: summary.videoUrl ?? staticDetails?.videoUrl,
       color: summary.color ?? "",
       clarity: summary.clarity ?? "",
       cut: summary.cut ?? "",

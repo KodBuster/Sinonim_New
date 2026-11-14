@@ -455,6 +455,83 @@ body.mango-chat-open .messenger-fab {
   }
 }
 
+/*
+ * PDP: два столбца через flex-wrap.
+ * --pdp-gallery-basis задаёт ProductGallery (ширина main+thumbs).
+ * column-gap min 1rem = X (как зазор main↔карусель): меньше места — покупка вниз.
+ */
+[data-pdp-layout] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  row-gap: 1rem;
+  column-gap: clamp(1rem, 2.5vw, 3.5rem);
+}
+[data-pdp-layout] > [data-pdp-gallery-col] {
+  flex: 1 1 var(--pdp-gallery-basis, 36rem);
+  min-width: min(100%, var(--pdp-gallery-basis, 36rem));
+  max-width: 100%;
+}
+/* Sticky только бок о бок; после переноса — обычный скролл всей страницы */
+[data-pdp-layout][data-pdp-sidebyside] > [data-pdp-gallery-col] {
+  position: sticky;
+  top: var(--site-header-height, 0px);
+}
+[data-pdp-layout] > .product-buy-column {
+  flex: 1 1 20rem;
+  min-width: min(100%, 20rem);
+  max-width: min(100%, 28rem);
+}
+
+/* Глянцевая вспышка: яркая середина до правого края — сразу назад */
+@keyframes cart-btn-gloss-sheen {
+  0% {
+    left: -35%;
+  }
+  50% {
+    left: calc(100% - 14%);
+  }
+  100% {
+    left: -35%;
+  }
+}
+@keyframes cart-btn-gloss-pop {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  25%,
+  75% {
+    filter: brightness(1.16);
+  }
+}
+.cart-btn-attention {
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  isolation: isolate;
+  animation: cart-btn-gloss-pop 1.35s linear;
+}
+.cart-btn-attention::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -35%;
+  width: 28%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 35%,
+    rgba(255, 255, 255, 0.95) 50%,
+    rgba(255, 255, 255, 0.2) 65%,
+    transparent 100%
+  );
+  transform: skewX(-16deg);
+  pointer-events: none;
+  animation: cart-btn-gloss-sheen 1.35s linear forwards;
+}
+
 /* Колонка покупки: сдвиг в px считается от реальной дырки до карусели */
 .product-buy-column {
   transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
@@ -462,6 +539,10 @@ body.mango-chat-open .messenger-fab {
 }
 body[data-inspired-video-open] .product-buy-column {
   transform: translateX(calc(-1 * var(--product-buy-shift, 0px)));
+}
+/* На ресайзе без анимации — иначе mid-transition ломает замер сдвига */
+html[data-inspired-shift-instant] .product-buy-column {
+  transition: none !important;
 }
 
 /* Подписи в кнопках: если видео ещё чуть цепляет край после сдвига колонки */
