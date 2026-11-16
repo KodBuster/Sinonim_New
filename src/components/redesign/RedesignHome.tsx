@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { ProductImage } from "@/components/catalog/ProductImage";
+import { formatPrice } from "@/lib/products";
+import { FREE_DELIVERY_THRESHOLD } from "@/lib/checkout";
 import {
   useCallback,
   useEffect,
@@ -34,7 +37,7 @@ function useRedesignStyles() {
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
-    link.href = "/redesign/site.css?v=category-covers-4";
+    link.href = "/redesign/site.css?v=store-benefits-3";
     document.documentElement.classList.add("synonym-redesign-active");
     document.body.classList.add("synonym-redesign-active");
     return () => {
@@ -86,14 +89,71 @@ function SectionHead({
   );
 }
 
-export function RedesignHome() {
+const SOCIAL_VIDEOS = [
+  null,
+  null,
+  { src: "/images/braslet_video_6.mp4", article: "194-030210-11" },
+  { src: "/images/braslet_video_3.mp4", article: "194-030210-1" },
+  { src: "/images/braslet_video_7.mp4", article: "194-032002-5" },
+  null,
+  null,
+  null,
+];
+
+type SocialProduct = { name: string; image: string; price: number; href: string };
+
+export function RedesignHome({ socialProducts }: { socialProducts: Record<string, SocialProduct> }) {
   useRedesignStyles();
 
   const [slide, setSlide] = useState(0);
   const [featuredTab, setFeaturedTab] = useState<(typeof FEATURED_TABS)[number]["id"]>("all");
   const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const featuredRail = useRef<HTMLDivElement>(null);
+  const socialRail = useRef<HTMLDivElement>(null);
+  const socialCenter = useRef<HTMLDivElement>(null);
+  const socialVideos = useRef<(HTMLVideoElement | null)[]>([]);
+  const [activeSocialVideo, setActiveSocialVideo] = useState(3);
   const touchX = useRef(0);
+
+  function selectSocialVideo(index: number) {
+    const rail = socialRail.current;
+    const video = socialVideos.current[index];
+    if (!rail || !video) return;
+
+    if (index === activeSocialVideo) {
+      if (video.paused) void video.play().catch(() => {});
+      else video.pause();
+      return;
+    }
+
+    socialVideos.current.forEach((other) => {
+      if (other !== video) other?.pause();
+    });
+    setActiveSocialVideo(index);
+    const card = video.parentElement!.getBoundingClientRect();
+    const viewport = rail.getBoundingClientRect();
+    rail.scrollBy({
+      left: card.left + card.width / 2 - viewport.left - viewport.width / 2,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
+    void video.play().catch(() => {});
+  }
+
+  useEffect(() => {
+    const rail = socialRail.current;
+    const center = socialCenter.current;
+    if (!rail || !center) return;
+    const observer = new ResizeObserver(() => {
+      if (!getComputedStyle(rail).getPropertyValue("--social-card-width").trim()) return;
+      const railRect = rail.getBoundingClientRect();
+      const cardRect = center.getBoundingClientRect();
+      rail.scrollLeft += cardRect.left + cardRect.width / 2 - railRect.left - railRect.width / 2;
+      observer.disconnect();
+    });
+    observer.observe(rail);
+    observer.observe(center);
+    return () => observer.disconnect();
+  }, []);
 
   const featuredProducts = useMemo(() => {
     if (featuredTab === "all") return productsByIds(FEATURED_ORDER);
@@ -390,32 +450,88 @@ export function RedesignHome() {
 
         <section className="social-section wrap" data-home-block="6">
           <SectionHead title="Украшения в движении" />
-          <p className="subhead">
-            Сюда добавим настоящие видео инфлюенсеров. После загрузки центральный ролик будет
-            автоматически воспроизводиться без звука.
-          </p>
-          <div className="social-rail" id="social-rail">
-            {Array.from({ length: 8 }, (_, i) => (
-              <div
-                key={i}
-                className={`social-card ${i === 3 ? "center" : ""}`}
-                aria-label={`Концепция будущего видео ${i + 1}`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={`${ASSET}/models/model-${String(i + 1).padStart(2, "0")}.webp`}
-                  alt={`Рекламный портрет модели ${i + 1} с серебряными украшениями`}
-                  loading="lazy"
-                />
-                <span className="social-placeholder">ВИДЕО СКОРО</span>
-              </div>
-            ))}
+          <div ref={socialRail} className="social-rail" id="social-rail">
+            {SOCIAL_VIDEOS.map((video, i) => {
+              const product = video ? socialProducts[video.article] : undefined;
+              return (
+                <div
+                  key={i}
+                  ref={i === 3 ? socialCenter : undefined}
+                  className={`social-card ${i === activeSocialVideo ? "center" : ""}`}
+                  aria-label={video ? undefined : `Концепция будущего видео ${i + 1}`}
+                >
+                  <div className="social-card-media">
+                    {video ? (
+                      <>
+                        <video
+                          ref={(element) => { socialVideos.current[i] = element; }}
+                          src={video.src}
+                          className="block h-full w-full object-cover"
+                          autoPlay={i === 3 && activeSocialVideo === 3}
+                          preload="metadata"
+                          muted
+                          loop
+                          playsInline
+                        />
+                        <button
+                          type="button"
+                          className="absolute inset-0 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+                          aria-label={i === activeSocialVideo ? "Пауза или воспроизведение текущего видео" : `Воспроизвести видео ${i - 1} в центре`}
+                          onClick={() => selectSocialVideo(i)}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`${ASSET}/models/model-${String(i + 1).padStart(2, "0")}.webp`}
+                          alt={`Рекламный портрет модели ${i + 1} с серебряными украшениями`}
+                          loading="lazy"
+                        />
+                        <span className="social-placeholder">ВИДЕО СКОРО</span>
+                      </>
+                    )}
+                  </div>
+                  {product ? (
+                    <Link className="social-product" href={product.href}>
+                      <span className="social-product-image">
+                        <ProductImage src={product.image} alt="" fill sizes="56px" className="object-contain" />
+                      </span>
+                      <span className="social-product-copy">
+                        <span className="social-product-name">{product.name}</span>
+                        <span>{formatPrice(product.price)}</span>
+                      </span>
+                    </Link>
+                  ) : <div className="social-product-spacer" aria-hidden="true" />}
+                </div>
+              );
+              })}
           </div>
-          <p className="social-note">
-            Рекламные фотоконцепции будущей видеокарусели. Ролики появятся после загрузки материалов;
-            изображения не привязаны к артикулам.
-          </p>
         </section>
+
+        <nav className="store-benefits" aria-label="Гарантия, доставка и возврат">
+          <Link href="/warranty">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <circle cx="24" cy="19" r="15" />
+              <circle cx="24" cy="19" r="10" />
+              <path d="m19 19 3 3 7-7M13 30l-5 13 8-3 4 5 4-11m11-4 5 13-8-3-4 5-4-11" />
+            </svg>
+            <span>Гарантия 2 года</span>
+          </Link>
+          <Link href="/shipping">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <path d="M11 13h19l-4 19h-9m12-14h7l7 8-1 6h-5m-8 0h-3M4 19h12m-9 6h8m-13 6h7" />
+              <circle cx="13" cy="32" r="4" /><circle cx="33" cy="32" r="4" />
+            </svg>
+            <span>Бесплатная доставка от {formatPrice(FREE_DELIVERY_THRESHOLD)}</span>
+          </Link>
+          <Link href="/terms">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <path d="M10 25V12l6-6h19l6 6v25H27M10 12h31M21 17h9M15 28l-11 8 11 8v-5h12v-6H15z" />
+            </svg>
+            <span>Возврат и обмен</span>
+          </Link>
+        </nav>
 
         <section className="journal wrap" data-home-block="7">
           <SectionHead

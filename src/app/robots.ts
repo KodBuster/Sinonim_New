@@ -13,7 +13,6 @@ export default function robots(): MetadataRoute.Robots {
         "/checkout",
         "/favorites",
         "/api/",
-        "/v2",
       ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

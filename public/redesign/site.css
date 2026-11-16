@@ -665,3 +665,140 @@ body.synonym-redesign-active [data-messenger-fab] {
     white-space: normal;
   }
 }
+
+/* Jewelry in motion: identical card widths, with a taller featured portrait. */
+.social-section.wrap {
+  width: calc(100% - 2 * clamp(16px, 3vw, 54px));
+  container-type: inline-size;
+}
+
+.social-section .social-rail {
+  --social-card-width: 300px;
+  --social-product-height: 90px;
+  --social-rail-padding: 15px;
+  --social-gap: 24px;
+  box-sizing: border-box;
+  height: calc(var(--social-card-width) * 5 / 3 + var(--social-product-height) + 2 * var(--social-rail-padding));
+  padding-block: var(--social-rail-padding);
+  overflow-anchor: none;
+  gap: var(--social-gap);
+}
+
+.social-section .social-rail::before,
+.social-section .social-rail::after {
+  content: "";
+  flex: 0 0 max(0px, calc((100% - var(--social-card-width)) / 2 - var(--social-gap)));
+}
+
+.social-section .social-card {
+  flex: 0 0 var(--social-card-width);
+  width: var(--social-card-width);
+  min-width: 0;
+  max-width: none;
+  aspect-ratio: auto;
+  background: transparent;
+  border-radius: 0;
+}
+
+.social-section .social-card-media {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 300 / 388;
+  border-radius: 10px;
+  background: #f5f2ec;
+  transition: aspect-ratio 450ms ease;
+}
+
+.social-section .social-card.center {
+  transform: none;
+  box-shadow: none;
+}
+
+.social-section .social-card.center .social-card-media {
+  aspect-ratio: 3 / 5;
+}
+
+.social-product, .social-product-spacer {
+  height: var(--social-product-height);
+}
+
+.social-product {
+  display: grid;
+  grid-template-columns: minmax(34px, 56px) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #e8e8e8;
+  border-radius: 5px;
+  background: white;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.social-product:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+.social-product-image { position: relative; height: 100%; background: #FFFFFF; }
+.social-product .social-product-image img { object-fit: contain; filter: none; }
+.social-product-copy { display: grid; gap: 4px; }
+.social-product-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+@media (max-width: 960px) {
+  .social-section .social-rail {
+    --social-card-width: min(300px, 27cqw);
+    --social-gap: clamp(10px, 1.25vw, 24px);
+  }
+}
+
+@media (max-width: 680px) {
+  .social-section .social-rail {
+    --social-card-width: min(300px, 68cqw);
+    --social-rail-padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-section .social-card-media { transition: none; }
+}
+
+.store-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  background: var(--color-olive-logo, #4a5335);
+  color: #fff;
+}
+
+.store-benefits > a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 146px;
+  padding: 18px 10px;
+  color: inherit;
+  text-align: center;
+  font: 400 clamp(14px, 1.3vw, 21px)/1.25 var(--serif);
+}
+
+.store-benefits svg {
+  width: 46px;
+  height: 46px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.store-benefits a:hover span { text-decoration: underline; text-underline-offset: 4px; }
+.store-benefits a:focus-visible { outline: 2px solid currentColor; outline-offset: -5px; }
+
+@media (max-width: 680px) {
+  .store-benefits > a { min-height: 110px; gap: 8px; padding-inline: 6px; }
+  .store-benefits svg { width: 32px; height: 32px; }
+}
