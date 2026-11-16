@@ -1,24 +1,27 @@
 import {
   DEFAULT_CATALOG_SORT,
+  CATALOG_CATEGORY_SLUGS,
   numericSizesFromOptions,
   PRICE_RANGES,
   type CategorySlug,
   type Product,
 } from "./products";
 
+export function parseCatalogCategory(value: string | null | undefined): CategorySlug | undefined {
+  return CATALOG_CATEGORY_SLUGS.find((slug) => slug === value);
+}
+
 export type CatalogFilters = {
   category?: CategorySlug;
   priceRanges: string[];
   sizes: string[];
   complectsOnly: boolean;
+  newOnly?: boolean;
   sort: string;
 };
 
 function getProductSizes(product: Product): number[] {
-  if (product.sizeOptions?.length) {
-    return numericSizesFromOptions(product.sizeOptions);
-  }
-  return [];
+  return numericSizesFromOptions(product.availableSizeOptions ?? []);
 }
 
 function productMatchesSize(product: Product, sizeParam: string): boolean {
@@ -59,6 +62,9 @@ export function filterProducts(
   if (filters.complectsOnly) {
     result = result.filter((product) => Boolean(product.setArtNos?.length));
   }
+  if (filters.newOnly) {
+    result = result.filter((product) => product.isNew || product.badge === "Новинка");
+  }
 
   switch (filters.sort) {
     case "price-asc":
@@ -86,6 +92,7 @@ export function parseFiltersFromSearchParams(
     priceRanges: params.getAll("price"),
     sizes: params.getAll("size"),
     complectsOnly: params.get("complect") === "1",
+    newOnly: params.get("new") === "1",
     sort: params.get("sort") ?? DEFAULT_CATALOG_SORT,
   };
 }
@@ -103,6 +110,7 @@ export function buildFilterQuery(
   if (next.complectsOnly) {
     query.set("complect", "1");
   }
+  if (next.newOnly) query.set("new", "1");
   if (next.sort && next.sort !== DEFAULT_CATALOG_SORT) {
     query.set("sort", next.sort);
   }
@@ -118,15 +126,18 @@ export function countActiveFilters(filters: CatalogFilters): number {
   return (
     filters.priceRanges.length +
     filters.sizes.length +
-    (filters.complectsOnly ? 1 : 0)
+    (filters.complectsOnly ? 1 : 0) +
+    (filters.newOnly ? 1 : 0)
   );
 }
 
 export function hasCatalogFilterParams(params: URLSearchParams): boolean {
   return (
+    params.has("category") ||
     params.has("price") ||
     params.has("size") ||
     params.has("complect") ||
+    params.has("new") ||
     (params.has("sort") && params.get("sort") !== DEFAULT_CATALOG_SORT)
   );
 }

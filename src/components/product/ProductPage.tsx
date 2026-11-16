@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
-import { ProductCard } from "@/components/catalog/ProductCard";
 import { CATEGORIES, type Product, type ProductDetails } from "@/lib/products";
 import { getInsertMassDisplayLabel } from "@/lib/synthetic-diamond-labels";
 import { resolveProductVideoUrl } from "@/lib/product-video";
@@ -12,6 +11,9 @@ import { ProductComplectSection } from "./ProductComplectSection";
 import { ProductConfigurator } from "./ProductConfigurator";
 import { ProductGallery } from "./ProductGallery";
 import { ProductInspiredSection } from "./ProductInspiredSection";
+import { ProductRecommendations } from "./ProductRecommendations";
+import { ProductReviews } from "./ProductReviews";
+import { RecentlyViewedProducts } from "./RecentlyViewedProducts";
 import { PdpLayout } from "./PdpLayout";
 import { ProductSelectionProvider } from "./ProductSelectionContext";
 
@@ -64,8 +66,7 @@ export function ProductPage({
 
       <Suspense fallback={null}>
         <ProductSelectionProvider product={product}>
-          {/* --pdp-pad-right: и поле страницы, и сдвиг колонки при открытом видео */}
-          <div className="w-full pl-[clamp(10px,1.2vw,20px)] pr-[length:var(--pdp-pad-right)] [--pdp-pad-right:clamp(4.25rem,calc(2.35rem+4.25vw),6.5rem)]">
+          <div className="w-full px-[clamp(10px,1.2vw,20px)]">
             {/*
               Flex-wrap: бок о бок, пока есть галерея + зазор X + колонка покупки.
               Sticky галереи — только в PdpLayout при data-pdp-sidebyside.
@@ -128,31 +129,20 @@ export function ProductPage({
                 {complectProducts.length > 0 && product.setArtNos?.length ? (
                   <ProductComplectSection products={complectProducts} />
                 ) : null}
+                <a href="#product-reviews" className="mt-5 inline-block text-sm underline underline-offset-4">
+                  Отзывы о товаре
+                </a>
                 <ProductInspiredSection
-                  product={{
-                    name: product.name,
-                    image:
-                      product.image ||
-                      product.images[0] ||
-                      "/images/product-ring.webp",
-                    price: product.price,
-                  }}
+                  product={product}
                 />
               </div>
             </PdpLayout>
           </div>
 
-          <div className="w-full pl-[clamp(10px,1.2vw,20px)] pr-[length:var(--pdp-pad-right)] [--pdp-pad-right:clamp(4.25rem,calc(2.35rem+4.25vw),6.5rem)]">
+          <div className="w-full px-[clamp(10px,1.2vw,20px)]">
             {related.length > 0 && (
-              <div className="mt-16 md:mt-20">
-                <h2 className="mb-6 font-heading text-2xl text-brand-olive-dark md:text-[1.75rem]">
-                  Ещё модели
-                </h2>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-                  {related.map((item) => (
-                    <ProductCard key={item.id} product={item} />
-                  ))}
-                </div>
+              <div className="mt-5">
+                <ProductRecommendations products={related} />
               </div>
             )}
           </div>
@@ -160,6 +150,8 @@ export function ProductPage({
           <div className="mt-4 md:mt-5">
             <ProductCategories />
           </div>
+          <RecentlyViewedProducts product={product} />
+          <ProductReviews key={product.slug} slug={product.slug} />
         </ProductSelectionProvider>
       </Suspense>
     </section>

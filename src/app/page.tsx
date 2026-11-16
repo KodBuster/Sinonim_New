@@ -1,4 +1,5 @@
 import { RedesignHome } from "@/components/redesign/RedesignHome";
+import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildHomeJsonLd } from "@/lib/home-schema";
 import { buildPageMetadata } from "@/lib/metadata";
@@ -17,6 +18,7 @@ export default function HomePage() {
     <>
       <JsonLd data={buildHomeJsonLd()} />
       <RedesignHome />
+      <Footer />
     </>
   );
 }

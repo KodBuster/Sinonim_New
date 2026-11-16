@@ -35,7 +35,7 @@ const getCachedAdvantShopCatalog = unstable_cache(
       categoryKey === "all" ? undefined : (categoryKey as CategorySlug);
     return fetchAdvantShopProducts({ category, sort });
   },
-  ["advantshop-catalog"],
+  ["advantshop-catalog-v3"],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: ["catalog"] }
 );
 
@@ -196,7 +196,21 @@ export async function getRelatedProducts(
   limit = 4
 ): Promise<Product[]> {
   const catalog = await getCatalogProducts({ category: product.category });
-  return catalog.filter((item) => item.id !== product.id).slice(0, limit);
+  const related = catalog.filter((item) => item.id !== product.id).slice(0, limit);
+  if (related.length === limit) return related;
+
+  try {
+    const seen = new Set([product.id, ...related.map((item) => item.id)]);
+    for (const item of await getCatalogProducts()) {
+      if (seen.has(item.id)) continue;
+      related.push(item);
+      seen.add(item.id);
+      if (related.length === limit) break;
+    }
+  } catch (error) {
+    console.warn("Additional recommendations unavailable:", error);
+  }
+  return related;
 }
 
 export async function getComplectProducts(

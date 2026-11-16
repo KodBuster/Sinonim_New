@@ -15,10 +15,11 @@ import {
 import { extractInsertMassFromName } from "@/lib/synthetic-diamond-labels";
 import { advantshopClientFetch, advantshopFetch } from "./client";
 import { getAdvantShopBaseUrl, getCategoryUrlMap, CATALOG_REVALIDATE_SECONDS } from "./config";
-import { mapCatalogProduct, mapProductDetails, parseDiamondWeightLabelFromProperties, parseLengthMmLabelFromProperties, parseManufacturerFromProperties, pickOfferPrice, resolveAdvantShopManufacturer } from "./mapper";
+import { extractProductSizeOptions, mapCatalogProduct, mapProductDetails, parseDiamondWeightLabelFromProperties, parseLengthMmLabelFromProperties, parseManufacturerFromProperties, pickOfferPrice, resolveAdvantShopManufacturer } from "./mapper";
 import {
   getAdvantShopDetailsStockInfo,
   getAvailableSizePickerSizes,
+  getConfirmedSizeOptions,
   isAdvantShopProductInStock,
   type AdvantShopStockInfo,
 } from "./stock";
@@ -375,6 +376,8 @@ async function fetchProductStockInfo(
     const manufacturer = resolveAdvantShopManufacturer(details);
     return {
       ...stock,
+      sizeOptions: extractProductSizeOptions(details),
+      availableSizeOptions: getConfirmedSizeOptions(details),
       listPrice: listPrice > 0 ? listPrice : undefined,
       manufacturer,
     };

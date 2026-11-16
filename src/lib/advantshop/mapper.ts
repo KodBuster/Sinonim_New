@@ -22,6 +22,7 @@ import {
   getAdvantShopDetailsStockInfo,
   getAdvantShopStockAmount,
   getAvailableSizePickerSizes,
+  getConfirmedSizeOptions,
   parseAdvantShopAmount,
   type AdvantShopStockInfo,
 } from "./stock";
@@ -690,7 +691,7 @@ function resolveCatalogSizeOptions(
     category === "rings" || category === "bracelets" || sizeOptions.length > 0;
   if (!needsSizes) return undefined;
   if (sizeOptions.length) return sortProductSizeOptions(sizeOptions);
-  if (category === "rings" || category === "bracelets") {
+  if (category === "bracelets") {
     return defaultRingBraceletSizeOptions();
   }
   return undefined;
@@ -710,7 +711,13 @@ export function mapCatalogProduct(
       item.priceWithDiscount,
       item.price,
     ) ?? 0;
-  const sizeOptions = extractProductSizeOptions(item);
+  const sizeOptions = stock?.sizeOptions?.length
+    ? stock.sizeOptions
+    : extractProductSizeOptions(item);
+  const availableSizeOptions = stock?.availableSizeOptions ?? getConfirmedSizeOptions({
+    offers: item.offers ?? undefined,
+    sizeColorPicker: item.sizeColorPicker,
+  });
 
   const description = item.briefDescription || undefined;
   const stoneWeight = description
@@ -753,6 +760,7 @@ export function mapCatalogProduct(
     description,
     images: resolveProductImages(collectImages(item.photos)),
     sizeOptions: resolveCatalogSizeOptions(sizeOptions, category),
+    availableSizeOptions,
     artNo,
     offerArtNos,
     setArtNos: setArtNos?.length ? setArtNos : undefined,

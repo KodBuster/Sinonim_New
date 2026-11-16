@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -873,24 +874,61 @@ function GalleryLayout({
     mainObserverRef.current = observer;
   }, []);
 
-  // Ширина галереи «как есть» → PDP знает, когда колонка покупки должна уйти вниз
-  useEffect(() => {
-    if (thumbsHeight == null || thumbsHeight < 8) return;
+  /**
+   * Высота main = min(viewport, высота при которой галерея + gap + покупка
+   * ещё влезают в ряд). На 2K+ без потолка basis раздувается от 100dvh
+   * и flex-wrap уводит колонку покупки вниз.
+   */
+  useLayoutEffect(() => {
+    const GALLERY_MAIN_THUMBS_GAP = 16; // md:gap-4
+    const HEADER_FALLBACK_PX = 66;
+    const VIEWPORT_CHROME_PX = 5.5 * 16;
 
-    const GALLERY_MAIN_THUMBS_GAP = 16; // md:gap-4 = X
-    const mainW = thumbsHeight * 0.8; // aspect 4/5
-    const thumbW =
-      Math.floor((thumbsHeight - THUMB_PAIR_GAP) / 2) * 0.75;
-    const basis = Math.ceil(mainW + GALLERY_MAIN_THUMBS_GAP + thumbW);
-    document.documentElement.style.setProperty(
-      "--pdp-gallery-basis",
-      `${basis}px`,
-    );
+    const syncGalleryMetrics = () => {
+      const rootStyle = getComputedStyle(document.documentElement);
+      const headerRaw = rootStyle.getPropertyValue("--site-header-height").trim();
+      const headerH = headerRaw.endsWith("px")
+        ? Number.parseFloat(headerRaw)
+        : HEADER_FALLBACK_PX;
+      const viewportMaxH = Math.max(
+        280,
+        window.innerHeight -
+          (Number.isFinite(headerH) ? headerH : HEADER_FALLBACK_PX) -
+          VIEWPORT_CHROME_PX,
+      );
 
-    return () => {
-      document.documentElement.style.removeProperty("--pdp-gallery-basis");
+      const leftPad = Math.min(20, Math.max(10, window.innerWidth * 0.012));
+      const rightPad = Math.min(
+        6.5 * 16,
+        Math.max(4.25 * 16, 2.35 * 16 + window.innerWidth * 0.0425),
+      );
+      const colGap = Math.min(3.5 * 16, Math.max(16, window.innerWidth * 0.025));
+      const contentW = Math.max(320, window.innerWidth - leftPad - rightPad - colGap);
+      // Как в globals: 1.55fr / (1.55fr + 0.78fr) — ширина колонки галереи
+      const galleryFr = 1.55;
+      const buyFr = 0.78;
+      const galleryColW = contentW * (galleryFr / (galleryFr + buyFr));
+      // Запас, чтобы main+thumbs не вылезали в колонку покупки
+      const maxGalleryW = Math.max(240, galleryColW - 8);
+
+      // basis(h) ≈ 1.175h + 16 - 0.375*THUMB_PAIR_GAP → h под maxGalleryW
+      const maxHFromWidth =
+        (maxGalleryW - GALLERY_MAIN_THUMBS_GAP + 0.375 * THUMB_PAIR_GAP) / 1.175;
+      const mainH = Math.max(280, Math.min(viewportMaxH, maxHFromWidth));
+
+      document.documentElement.style.setProperty(
+        "--pdp-gallery-main-max-h",
+        `${Math.round(mainH)}px`,
+      );
     };
-  }, [thumbsHeight]);
+
+    syncGalleryMetrics();
+    window.addEventListener("resize", syncGalleryMetrics);
+    return () => {
+      window.removeEventListener("resize", syncGalleryMetrics);
+      document.documentElement.style.removeProperty("--pdp-gallery-main-max-h");
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -1654,8 +1692,8 @@ export function ProductGallery({
           activeIndex={activeIndex}
           onActiveIndexChange={setActiveIndex}
           thumbClassName="aspect-[3/4] w-full rounded-xl"
-          /* Высота от вьюпорта, ширина не шире колонки — иначе наезд на покупку до брейкпоинта */
-          mainClassName={`aspect-[4/5] !flex-none w-auto max-w-full min-h-[280px] h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] max-h-[calc(100dvh-var(--site-header-height,4rem)-5.5rem)] rounded-xl`}
+          /* Высота через .pdp-gallery-main → --pdp-gallery-main-max-h (см. globals.css) */
+          mainClassName="pdp-gallery-main aspect-[4/5] !flex-none w-auto max-w-full min-h-[280px] rounded-xl"
           mainObjectFit="contain"
           mainImageSizes="(max-width: 1280px) 100vw, 48vw"
           thumbImageSizes="(max-width: 1280px) 120px, 180px"

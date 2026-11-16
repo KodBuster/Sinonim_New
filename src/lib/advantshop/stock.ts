@@ -1,4 +1,4 @@
-import type { CategorySlug } from "@/lib/products";
+import type { CategorySlug, ProductSizeOption } from "@/lib/products";
 import type {
   AdvantShopCatalogProduct,
   AdvantShopOffer,
@@ -137,6 +137,16 @@ export function isAdvantShopDetailsInStock(
   return true;
 }
 
+export function getConfirmedSizeOptions(
+  item: Pick<AdvantShopProductDetails, "offers" | "sizeColorPicker">,
+): ProductSizeOption[] {
+  if (!hasOfferStockData(item)) return [];
+  return getAvailableSizePickerSizes(item).map(({ name }) => {
+    const label = name.trim();
+    return { value: label, label };
+  });
+}
+
 export type AdvantShopStockInfo = {
   stockAmount?: number;
   inStock: boolean;
@@ -144,6 +154,8 @@ export type AdvantShopStockInfo = {
   offerArtNos?: string[];
   /** Цена для каталога: оффер в наличии, не «Главная» с нулевым остатком. */
   listPrice?: number;
+  sizeOptions?: ProductSizeOption[];
+  availableSizeOptions?: ProductSizeOption[];
   /** Производитель/бренд с карточки AdvantShop (не из свойств). */
   manufacturer?: string;
 };

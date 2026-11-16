@@ -34,6 +34,9 @@ type CartContextValue = {
   total: number;
   count: number;
   isReady: boolean;
+  isOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
   addItem: (input: AddToCartInput) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
@@ -61,6 +64,9 @@ function saveCart(items: CartItem[]) {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const openCart = useCallback(() => setIsOpen(true), []);
+  const closeCart = useCallback(() => setIsOpen(false), []);
 
   useEffect(() => {
     setItems(loadCart());
@@ -166,6 +172,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items, isReady]);
 
   const addItem = useCallback((input: AddToCartInput) => {
+    setIsOpen(true);
     const id = buildCartItemId(input.productSlug, input.stoneWeight, input.size);
 
     setItems((prev) => {
@@ -217,12 +224,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       total: getCartTotal(items),
       count: getCartCount(items),
       isReady,
+      isOpen,
+      openCart,
+      closeCart,
       addItem,
       removeItem,
       updateQuantity,
       clearCart,
     }),
-    [items, isReady, addItem, removeItem, updateQuantity, clearCart]
+    [items, isReady, isOpen, openCart, closeCart, addItem, removeItem, updateQuantity, clearCart]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

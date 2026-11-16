@@ -5,7 +5,7 @@ meta:
   environment: node
   toolchain:
     name: npm
-    version: "20"
+    version: "24"
 
 build:
   additionalCommands: npm ci --include=dev && npm run build
@@ -13,3 +13,4 @@ build:
 run:
   command: node scripts/start-server.mjs
   containerPort: 80
+  persistenceMount: /data

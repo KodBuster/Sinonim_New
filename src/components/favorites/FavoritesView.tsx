@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -48,7 +48,7 @@ export function FavoritesView() {
 
   if (!isReady || loading) {    return (
       <section className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 text-center text-brand-muted">
+        <div className="w-full px-4 md:px-6 lg:px-10 text-center text-brand-muted">
           Загрузка…
         </div>
       </section>
@@ -58,7 +58,7 @@ export function FavoritesView() {
   if (products.length === 0) {
     return (
       <section className="py-16 md:py-24">
-        <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 text-center">
+        <div className="w-full px-4 md:px-6 lg:px-10 text-center">
           <h1 className="font-heading text-3xl md:text-4xl text-brand-olive-dark mb-4">
             Избранное
           </h1>
@@ -79,7 +79,7 @@ export function FavoritesView() {
 
   return (
     <section className="py-8 md:py-12">
-      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10">
+      <div className="w-full px-4 md:px-6 lg:px-10">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div>
             <p className="text-brand-terracotta text-sm tracking-[0.2em] uppercase mb-2">

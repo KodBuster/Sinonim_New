@@ -19,6 +19,7 @@ type PageProps = {
     price?: string | string[];
     size?: string | string[];
     complect?: string;
+    new?: string;
   }>;
 };
 
@@ -27,6 +28,7 @@ function buildFilterParams(searchParams: {
   price?: string | string[];
   size?: string | string[];
   complect?: string;
+  new?: string;
 }) {
   const query = new URLSearchParams();
   if (searchParams.sort) query.set("sort", searchParams.sort);
@@ -45,6 +47,7 @@ function buildFilterParams(searchParams: {
       : [];
   sizes.forEach((value) => query.append("size", value));
   if (searchParams.complect) query.set("complect", searchParams.complect);
+  if (searchParams.new) query.set("new", searchParams.new);
 
   return query;
 }

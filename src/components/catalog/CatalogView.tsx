@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -7,11 +7,13 @@ import { CATEGORIES, DEFAULT_CATALOG_SORT, type CategorySlug, type Product } fro
 import {
   filterProducts,
   parseFiltersFromSearchParams,
+  parseCatalogCategory,
   countActiveFilters,
   buildFilterQuery,
 } from "@/lib/catalog-utils";
 import { CatalogFilters, SortSelect } from "./CatalogFilters";
 import { ProductCard } from "./ProductCard";
+import { CategoryCatalog } from "./CategoryCatalog";
 
 const CATALOG_GRID =
   "grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5 lg:gap-6";
@@ -74,7 +76,7 @@ export function CatalogView({
     basePathProp ?? (category ? `/shop/${category}` : "/shop");
   const filters = parseFiltersFromSearchParams(
     new URLSearchParams(searchParams.toString()),
-    category
+    basePath === "/shop" ? parseCatalogCategory(searchParams.get("category")) : category
   );
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -102,7 +104,7 @@ export function CatalogView({
     }
 
     const params = new URLSearchParams();
-    if (category) params.set("category", category);
+    if (filters.category) params.set("category", filters.category);
     if (filters.sort !== DEFAULT_CATALOG_SORT) params.set("sort", filters.sort);
 
     const controller = new AbortController();
@@ -137,7 +139,7 @@ export function CatalogView({
         window.clearTimeout(timeoutId);
         setLoading(false);
       });
-  }, [category, filters.sort, initialProducts, localOnly]);
+  }, [filters.category, filters.sort, initialProducts, localOnly]);
 
   const products = filterProducts(filters, catalogProducts);
   const activeFilterCount = countActiveFilters(filters);
@@ -152,9 +154,15 @@ export function CatalogView({
       : "Каталог украшений из серебра 925 с ограненными синтетическими алмазами");
   const pageEyebrow = heading?.eyebrow ?? "Каталог";
 
+  if (category || heading || basePath === "/shop") {
+    return <CategoryCatalog key={basePath} title={pageTitle} description={pageDescription}
+      products={products} filters={filters} basePath={basePath}
+      loading={loading} error={catalogError} onRetry={retryLoad} />;
+  }
+
   return (
     <section className="py-8 md:py-12">
-      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10">
+      <div className="w-full px-4 md:px-6 lg:px-10">
         <nav className="text-sm text-brand-muted mb-6" aria-label="Хлебные крошки">
           <ol className="flex flex-wrap items-center gap-2">
             <li>

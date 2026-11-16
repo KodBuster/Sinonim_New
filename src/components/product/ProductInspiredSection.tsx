@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ProductImage } from "@/components/catalog/ProductImage";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, type ProductDetails } from "@/lib/products";
+import { InspiredProductView } from "./InspiredProductView";
 import { useProductSelection } from "./ProductSelectionContext";
 
 /** Temporary Missoma PDP placeholders — replace with own videos later. */
@@ -18,11 +19,7 @@ const PLACEHOLDER_VIDEOS = [
 
 const PRODUCT_CARD_DELAY_MS = 1000;
 
-type InspiredProduct = {
-  name: string;
-  image: string;
-  price: number;
-};
+type InspiredProduct = ProductDetails;
 
 function IconMute({ muted }: { muted: boolean }) {
   if (muted) {
@@ -79,6 +76,13 @@ function InspiredVideoModal({
   const [index, setIndex] = useState(startIndex);
   const [showProductCard, setShowProductCard] = useState(false);
   const [muted, setMuted] = useState(true);
+  const [shopping, setShopping] = useState(false);
+  const buyButtonRef = useRef<HTMLButtonElement>(null);
+
+  const returnToVideo = useCallback(() => {
+    setShopping(false);
+    requestAnimationFrame(() => buyButtonRef.current?.focus());
+  }, []);
 
   const scrollToIndex = useCallback(
     (next: number, behavior: ScrollBehavior = "smooth") => {
@@ -214,9 +218,14 @@ function InspiredVideoModal({
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (shopping) {
+          returnToVideo();
+          return;
+        }
         onClose();
         return;
       }
+      if (shopping) return;
       if (event.key === "ArrowUp") {
         event.preventDefault();
         goPrev();
@@ -229,7 +238,7 @@ function InspiredVideoModal({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose, goPrev, goNext]);
+  }, [onClose, goPrev, goNext, shopping, returnToVideo]);
 
   useEffect(() => {
     setShowProductCard(false);
@@ -244,6 +253,10 @@ function InspiredVideoModal({
     videoRefs.current.forEach((video, i) => {
       if (!video) return;
       video.muted = muted;
+      if (shopping) {
+        video.pause();
+        return;
+      }
       if (i === index) {
         void video.play().catch(() => {
           if (!video.muted) {
@@ -261,13 +274,14 @@ function InspiredVideoModal({
         }
       }
     });
-  }, [index, muted]);
+  }, [index, muted, shopping]);
 
   useEffect(() => {
     const el = scrollerRef.current;
     if (!el) return;
 
     const updateFromScroll = () => {
+      if (shopping) return;
       if (scrollingTo.current != null) return;
       const height = el.clientHeight || 1;
       const next = Math.round(el.scrollTop / height);
@@ -278,29 +292,14 @@ function InspiredVideoModal({
 
     el.addEventListener("scroll", updateFromScroll, { passive: true });
     return () => el.removeEventListener("scroll", updateFromScroll);
-  }, [index, videos.length]);
+  }, [index, videos.length, shopping]);
 
   const handleEnded = useCallback(() => {
     goNext();
   }, [goNext]);
 
   const handleBuy = () => {
-    onClose();
-    // Ждём сдвиг колонки после закрытия видео, затем вспышка «В корзину»
-    window.setTimeout(() => {
-      const button = document.querySelector<HTMLButtonElement>(
-        ".product-buy-column [data-add-to-cart]",
-      );
-      if (!button) return;
-      button.scrollIntoView({ behavior: "smooth", block: "center" });
-      button.focus({ preventScroll: true });
-      button.classList.remove("cart-btn-attention");
-      void button.offsetWidth;
-      button.classList.add("cart-btn-attention");
-      window.setTimeout(() => {
-        button.classList.remove("cart-btn-attention");
-      }, 1500);
-    }, 480);
+    setShopping(true);
   };
 
   const toggleMute = () => {
@@ -323,7 +322,7 @@ function InspiredVideoModal({
       className="pointer-events-none fixed inset-0 z-[80]"
       role="dialog"
       aria-modal="true"
-      aria-label="Просмотр видео"
+      aria-label={shopping ? `Покупка — ${product.name}` : "Просмотр видео"}
     >
       <div
         ref={panelRef}
@@ -335,6 +334,7 @@ function InspiredVideoModal({
           maxHeight: "calc(100dvh - var(--site-header-height, 4rem) - 1.5rem)",
         }}
       >
+        <div className="h-full w-full" hidden={shopping} inert={shopping}>
         <div
           ref={scrollerRef}
           className="h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
@@ -443,6 +443,7 @@ function InspiredVideoModal({
                 </p>
               </div>
               <button
+                ref={buyButtonRef}
                 type="button"
                 onClick={handleBuy}
                 className="shrink-0 rounded-md bg-white px-3.5 py-2 text-xs font-medium tracking-wide text-brand-olive-dark transition-opacity hover:opacity-90 sm:text-sm"
@@ -452,6 +453,8 @@ function InspiredVideoModal({
             </div>
           </div>
         ) : null}
+        </div>
+        {shopping && <InspiredProductView product={product} onBack={returnToVideo} onClose={onClose} />}
       </div>
     </div>,
     document.body,

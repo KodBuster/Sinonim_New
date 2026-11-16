@@ -47,6 +47,70 @@ body {
   font-family: var(--font-body);
 }
 
+/*
+ * PDP layout — must stay early in this file: rules after the large Mango
+ * mobile @media block were being dropped from the Turbopack CSS bundle.
+ */
+[data-pdp-layout] {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  row-gap: 1rem;
+  column-gap: clamp(1rem, 2.5vw, 3.5rem);
+}
+@media (min-width: 768px) {
+  [data-pdp-layout] {
+    grid-template-columns: minmax(0, 1.55fr) minmax(20rem, 0.78fr);
+  }
+  [data-pdp-layout] > [data-pdp-gallery-col] {
+    position: sticky;
+    top: var(--site-header-height, 0px);
+    min-width: 0;
+    max-width: 100%;
+    align-self: start;
+    /* visible: стрелки карусели снаружи (-top/-bottom), иначе клипаются */
+    overflow: visible;
+  }
+  [data-pdp-layout] > .product-buy-column {
+    justify-self: end;
+    width: 100%;
+    min-width: 0;
+    max-width: 28rem;
+  }
+}
+[data-product-gallery] {
+  max-width: 100%;
+}
+.pdp-gallery-main {
+  height: var(
+    --pdp-gallery-main-max-h,
+    calc(100dvh - var(--site-header-height, 4rem) - 5.5rem)
+  );
+  max-height: var(
+    --pdp-gallery-main-max-h,
+    calc(100dvh - var(--site-header-height, 4rem) - 5.5rem)
+  );
+}
+.product-buy-column {
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
+  will-change: transform;
+}
+body[data-inspired-video-open] .product-buy-column {
+  transform: translateX(calc(-1 * var(--product-buy-shift, 0px)));
+}
+html[data-inspired-shift-instant] .product-buy-column {
+  transition: none !important;
+}
+.product-video-safe-label {
+  padding-right: 1.5rem !important;
+  transition:
+    padding-right 0.45s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.2s ease !important;
+}
+body[data-inspired-video-open] .product-video-safe-label {
+  padding-right: min(28%, calc(var(--inspired-video-cover, 280px) * 0.22)) !important;
+}
+
 /* Header logo: real <img> (iOS-safe). Tint to brand olive #4a5335. */
 .logo-header-olive {
   filter: brightness(0) saturate(100%) invert(30%) sepia(18%) saturate(720%)
@@ -455,34 +519,6 @@ body.mango-chat-open .messenger-fab {
   }
 }
 
-/*
- * PDP: два столбца через flex-wrap.
- * --pdp-gallery-basis задаёт ProductGallery (ширина main+thumbs).
- * column-gap min 1rem = X (как зазор main↔карусель): меньше места — покупка вниз.
- */
-[data-pdp-layout] {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  row-gap: 1rem;
-  column-gap: clamp(1rem, 2.5vw, 3.5rem);
-}
-[data-pdp-layout] > [data-pdp-gallery-col] {
-  flex: 1 1 var(--pdp-gallery-basis, 36rem);
-  min-width: min(100%, var(--pdp-gallery-basis, 36rem));
-  max-width: 100%;
-}
-/* Sticky только бок о бок; после переноса — обычный скролл всей страницы */
-[data-pdp-layout][data-pdp-sidebyside] > [data-pdp-gallery-col] {
-  position: sticky;
-  top: var(--site-header-height, 0px);
-}
-[data-pdp-layout] > .product-buy-column {
-  flex: 1 1 20rem;
-  min-width: min(100%, 20rem);
-  max-width: min(100%, 28rem);
-}
-
 /* Глянцевая вспышка: яркая середина до правого края — сразу назад */
 @keyframes cart-btn-gloss-sheen {
   0% {
@@ -530,28 +566,4 @@ body.mango-chat-open .messenger-fab {
   transform: skewX(-16deg);
   pointer-events: none;
   animation: cart-btn-gloss-sheen 1.35s linear forwards;
-}
-
-/* Колонка покупки: сдвиг в px считается от реальной дырки до карусели */
-.product-buy-column {
-  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.3, 1);
-  will-change: transform;
-}
-body[data-inspired-video-open] .product-buy-column {
-  transform: translateX(calc(-1 * var(--product-buy-shift, 0px)));
-}
-/* На ресайзе без анимации — иначе mid-transition ломает замер сдвига */
-html[data-inspired-shift-instant] .product-buy-column {
-  transition: none !important;
-}
-
-/* Подписи в кнопках: если видео ещё чуть цепляет край после сдвига колонки */
-.product-video-safe-label {
-  padding-right: 1.5rem !important;
-  transition:
-    padding-right 0.45s cubic-bezier(0.2, 0.7, 0.3, 1),
-    opacity 0.2s ease !important;
-}
-body[data-inspired-video-open] .product-video-safe-label {
-  padding-right: min(28%, calc(var(--inspired-video-cover, 280px) * 0.22)) !important;
 }

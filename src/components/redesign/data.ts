@@ -25,26 +25,30 @@ export const COLLECTIONS = [
   {
     id: "rings",
     name: "Кольца",
+    slogan: "Маленькое «да» себе",
     href: "/shop/rings",
-    photo: `${ASSET}/categories/rings.webp`,
+    photo: "/images/Кольцо.png",
   },
   {
     id: "earrings",
     name: "Серьги",
+    slogan: "Лови свой свет",
     href: "/shop/earrings",
-    photo: `${ASSET}/categories/earrings.webp`,
+    photo: "/images/Серьги.png",
   },
   {
     id: "necklaces",
     name: "Колье",
+    slogan: "Ближе к сердцу",
     href: "/shop/pendants",
-    photo: `${ASSET}/categories/pendants.webp`,
+    photo: "/images/Колье.png",
   },
   {
     id: "bracelets",
     name: "Браслеты",
+    slogan: "Блеск в каждом жесте",
     href: "/shop/bracelets",
-    photo: `${ASSET}/categories/bracelets.webp`,
+    photo: "/images/Браслет.png",
   },
 ] as const;
 

@@ -17,12 +17,9 @@ import {
   FEATURED_TABS,
   HERO_SLIDES,
   JOURNAL,
-  NAV,
   PRODUCTS,
   PROMOS,
-  formatPrice,
   productsByIds,
-  type RedesignProduct,
 } from "./data";
 import { ProductCard } from "./ProductCard";
 
@@ -37,7 +34,7 @@ function useRedesignStyles() {
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
-    link.href = "/redesign/site.css?v=promo-title-1";
+    link.href = "/redesign/site.css?v=category-covers-4";
     document.documentElement.classList.add("synonym-redesign-active");
     document.body.classList.add("synonym-redesign-active");
     return () => {
@@ -69,23 +66,18 @@ function Picture({
 }
 
 function SectionHead({
-  kicker,
   title,
   href,
-  text = "Смотреть всё",
+  text,
 }: {
-  kicker: string;
   title: string;
   href?: string;
   text?: string;
 }) {
   return (
     <div className="section-heading">
-      <div>
-        <span className="eyebrow">{kicker}</span>
-        <h2>{title}</h2>
-      </div>
-      {href ? (
+      <h2>{title}</h2>
+      {href && text ? (
         <Link className="text-link" href={href}>
           {text} ↗
         </Link>
@@ -99,7 +91,6 @@ export function RedesignHome() {
 
   const [slide, setSlide] = useState(0);
   const [featuredTab, setFeaturedTab] = useState<(typeof FEATURED_TABS)[number]["id"]>("all");
-  const [quickView, setQuickView] = useState<RedesignProduct | null>(null);
   const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const featuredRail = useRef<HTMLDivElement>(null);
   const touchX = useRef(0);
@@ -254,16 +245,12 @@ export function RedesignHome() {
         >
           <div className="featured-products-top">
             <div className="featured-products-intro">
-              <span className="eyebrow">СИНОНИМ / КАТАЛОГ</span>
               <h2 id="featured-products-title">Товары СИНОНИМ</h2>
               <p>
                 Украшения, которые становятся частью вашей истории. Подборка настоящих изделий из
                 каталога.
               </p>
             </div>
-            <Link href="/shop" className="text-link featured-all">
-              Смотреть все украшения ↗
-            </Link>
           </div>
           <div className="featured-products-controls">
             <div className="featured-tabs" role="tablist" aria-label="Товары по категориям">
@@ -312,7 +299,7 @@ export function RedesignHome() {
               ref={featuredRail}
             >
               {featuredProducts.map((p) => (
-                <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
+                <ProductCard key={p.id} product={p} />
               ))}
             </div>
           </div>
@@ -325,19 +312,20 @@ export function RedesignHome() {
           {COLLECTIONS.map((c) => (
             <Link key={c.id} href={c.href} className="category-tile">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.photo} alt={c.name} loading="eager" />
-              <span>
-                {c.name} <b>↗</b>
+              <img src={c.photo} alt="" loading="lazy" />
+              <span className="category-tile-copy">
+                <span className="category-tile-slogan">{c.slogan}</span>
+                <span className="category-tile-name">{c.name} <span aria-hidden="true">↗</span></span>
               </span>
             </Link>
           ))}
         </section>
 
         <section className="bestsellers wrap" data-home-block="4">
-          <SectionHead kicker="ВАШ ВЫБОР" title="Бестселлеры" href="/shop" />
+          <SectionHead title="Бестселлеры" />
           <div className="cards-scroll" id="bestseller-scroll">
             {bestsellers.map((p) => (
-              <ProductCard key={p.id} product={p} onQuickView={setQuickView} />
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
           <div className="scroll-actions">
@@ -401,7 +389,7 @@ export function RedesignHome() {
         </section>
 
         <section className="social-section wrap" data-home-block="6">
-          <SectionHead kicker="БУДЕТ ДОПОЛНЕНО" title="Украшения в движении" />
+          <SectionHead title="Украшения в движении" />
           <p className="subhead">
             Сюда добавим настоящие видео инфлюенсеров. После загрузки центральный ролик будет
             автоматически воспроизводиться без звука.
@@ -431,7 +419,6 @@ export function RedesignHome() {
 
         <section className="journal wrap" data-home-block="7">
           <SectionHead
-            kicker="СИНОНИМ · ЖУРНАЛ"
             title="Истории и вдохновение"
             href="/blog"
             text="В блог"
@@ -451,98 +438,6 @@ export function RedesignHome() {
           </div>
         </section>
       </main>
-
-      <footer className="site-footer">
-        <div className="wrap footer-grid">
-          <div className="footer-brand">
-            <Link href="/">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`${ASSET}/synonym-logo.png`} alt="СИНОНИМ" />
-            </Link>
-            <p>
-              Простые ценности.
-              <br />
-              Инновационные технологии.
-              <br />
-              Высокое качество.
-            </p>
-          </div>
-          <div>
-            <h3>Каталог</h3>
-            {NAV.slice(1, 6).map((item) => (
-              <Link key={item.href} href={item.href}>
-                {item.label.charAt(0) + item.label.slice(1).toLowerCase()}
-              </Link>
-            ))}
-          </div>
-          <div>
-            <h3>О нас</h3>
-            <Link href="/about">О бренде</Link>
-            <Link href="/blog">Блог</Link>
-            <Link href="/about">Философия</Link>
-            <Link href="/showroom">Шоурум</Link>
-          </div>
-          <div>
-            <h3>Контакты</h3>
-            <p>Шоурум в Москве. Украшения из серебра 925 с огранёнными синтетическими алмазами.</p>
-            <Link className="footer-real-link" href="/shop">
-              Смотреть каталог ↗
-            </Link>
-          </div>
-        </div>
-        <div className="wrap footer-line">
-          <span>© SYNONYM</span>
-          <span>
-            <Link href="/privacy">Конфиденциальность</Link>
-            {" · "}
-            <Link href="/terms">Оферта</Link>
-          </span>
-        </div>
-      </footer>
-
-      {quickView ? (
-        <div
-          className="modal-overlay visible"
-          role="dialog"
-          aria-modal="true"
-          aria-hidden="false"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setQuickView(null);
-          }}
-        >
-          <div className="modal-box">
-            <button
-              type="button"
-              className="icon-btn modal-close"
-              aria-label="Закрыть окно"
-              onClick={() => setQuickView(null)}
-            >
-              ×
-            </button>
-            <div id="modal-content">
-              <div className="quick-modal">
-                <div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    className="product-image from-catalog"
-                    src={quickView.image}
-                    alt={quickView.name}
-                  />
-                </div>
-                <div>
-                  <span className="eyebrow">БЫСТРЫЙ ПРОСМОТР</span>
-                  <h2>{quickView.name}</h2>
-                  <p className="pdp-price">{formatPrice(quickView.price)}</p>
-                  <p>Арт. {quickView.sku}</p>
-                  <Link className="button filled" href={`/products/${quickView.slug}`}>
-                    Выбрать изделие ↗
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
     </div>
   );

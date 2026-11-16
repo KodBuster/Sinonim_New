@@ -10,14 +10,6 @@ import {
 } from "@/lib/contacts";
 
 const FOOTER_LINKS = {
-  catalog: [
-    { label: "Новая коллекция", href: "/collections/fw-2026" },
-    { label: "Кольца", href: "/shop/rings" },
-    { label: "Серьги", href: "/shop/earrings" },
-    { label: "Колье", href: "/shop/pendants" },
-    { label: "Браслеты", href: "/shop/bracelets" },
-    { label: "Подарки", href: "/shop/gifts" },
-  ],
   info: [
     { label: "О бренде", href: "/about" },
     { label: "Сотрудничество", href: "/cooperation" },
@@ -68,10 +60,6 @@ const INSTAGRAM_HREF = "https://www.instagram.com/synonym_jewelry";
 function SocialLinksBlock({ className = "" }: { className?: string }) {
   return (
     <div className={`socials ${className}`.trim()}>
-      <p className="socials__title text-brand-terracotta text-xs tracking-[0.2em] uppercase mb-4">
-        Мы в соцсетях
-      </p>
-
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <a
           className="socials__link socials__link--inst"
@@ -107,9 +95,9 @@ function SocialLinksBlock({ className = "" }: { className?: string }) {
 
 export function Footer() {
   return (
-    <footer className="bg-white text-brand-text border-t border-brand-terracotta mt-auto">
-      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer className="bg-[#f7f1e5] text-brand-text border-t border-brand-terracotta mt-auto">
+      <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="lg:col-span-1">
             <Link href="/" className="inline-block mb-4 shrink-0">
               <Image
@@ -121,30 +109,7 @@ export function Footer() {
                 style={{ width: "auto" }}
               />
             </Link>
-            <p className="text-brand-muted text-sm leading-relaxed max-w-xs">
-              ограненные синтетические алмазы в серебре — современный подход к украшениям
-              без компромиссов в качестве.
-            </p>
-
-            <SocialLinksBlock className="mt-8 max-w-xs hidden lg:block" />
-          </div>
-
-          <div>
-            <h4 className="text-brand-terracotta text-xs tracking-[0.2em] uppercase mb-4">
-              Каталог
-            </h4>
-            <ul className="space-y-2.5">
-              {FOOTER_LINKS.catalog.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-brand-text hover:text-brand-terracotta transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <SocialLinksBlock className="max-w-xs" />
           </div>
 
           <div>
@@ -196,7 +161,6 @@ export function Footer() {
               ОГРН 1187746428484
             </p>
 
-            <SocialLinksBlock className="mt-8 max-w-xs lg:hidden" />
           </div>
         </div>
 

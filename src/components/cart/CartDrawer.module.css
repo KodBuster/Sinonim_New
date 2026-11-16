@@ -1,0 +1,67 @@
+.dialog { position: fixed; inset: 0 0 0 auto; margin: 0; padding: 0; border: 0; width: min(710px, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; background: transparent; color: #171717; font-family: var(--font-body, Inter, sans-serif); font-size: 14px; }
+.dialog::backdrop { background: rgb(0 0 0 / 65%); }
+.dialog[open] { animation: enter .25s ease-out; }
+.shell { display: flex; gap: 12px; height: 100%; }
+.bag { order: 2; flex: 1; min-width: 0; display: flex; flex-direction: column; background: #fff; }
+.header { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; min-height: 60px; border-bottom: 1px solid #ddd; }
+.header h2, .recommendations h2 { font-family: inherit; font-size: 15px; font-weight: 600; text-transform: uppercase; }
+.icon, .remove { display: grid; place-items: center; width: 32px; height: 32px; font-size: 26px; font-weight: 300; cursor: pointer; background: transparent; border: 0; }
+.delivery { background: #f7f1e5; padding: 12px 16px 16px; }
+.delivery p { margin: 0 0 14px; }
+.delivery progress { display: block; width: 100%; height: 6px; border: 0; border-radius: 4px; overflow: hidden; appearance: none; background: #e3dfd6; }
+.delivery progress::-webkit-progress-bar { background: #e3dfd6; }
+.delivery progress::-webkit-progress-value { background: #171717; border-radius: 4px; }
+.delivery progress::-moz-progress-bar { background: #171717; }
+.items { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.ribbon { background: #667047; color: white; font-size: 12px; padding: 10px 16px; margin: 14px 0 0; }
+.item { position: relative; display: flex; gap: 14px; padding: 20px 0; margin: 0 20px; border-bottom: 1px solid #ddd; }
+.image { position: relative; width: 94px; aspect-ratio: 4 / 5; flex-shrink: 0; align-self: flex-start; background: #fff; }
+.photo { object-fit: contain; }
+.info { flex: 1; min-width: 0; padding-right: 26px; }
+.name { display: block; font-size: 13px; line-height: 1.4; font-weight: 600; text-decoration: none; color: inherit; }
+.variant { font-size: 12px; color: #666; margin: 14px 0 4px; }
+.remove { position: absolute; right: -8px; top: 12px; font-size: 22px; }
+.itemBottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; margin-right: -26px; }
+.quantity { display: flex; align-items: center; }
+.quantity button { border: 0; background: transparent; width: 36px; height: 40px; font-size: 20px; cursor: pointer; }
+.quantity span { min-width: 24px; text-align: center; }
+.footer { flex-shrink: 0; background: white; }
+.details { border-top: 1px solid #222; border-bottom: 1px solid #222; background: #f7f1e5; }
+.details summary { display: flex; justify-content: space-between; padding: 18px 20px; cursor: pointer; list-style: none; text-transform: uppercase; font-size: 13px; }
+.details summary::-webkit-details-marker { display: none; }
+.details[open] summary span { transform: rotate(45deg); }
+.details p { padding: 0 20px 16px; margin: 0; font-size: 12px; line-height: 1.6; }
+.summary { padding: 14px 20px 12px; }
+.total { display: flex; justify-content: space-between; font-size: 16px; font-weight: 600; }
+.summary p { font-size: 12px; color: #777; margin: 8px 0 20px; }
+.checkout { display: flex; align-items: center; justify-content: center; gap: 16px; padding: 15px; border-radius: 9px; background: #171717; color: white; text-decoration: none; font-weight: 600; }
+.checkout:hover { background: #353535; }
+.payment { display: block; margin-top: 10px; text-align: center; color: #777; font-size: 10px; }
+.empty { display: grid; align-content: center; gap: 18px; min-height: 100%; padding: 32px; text-align: center; }
+.empty h3 { font-size: 22px; }
+.empty p { color: #777; }
+.recommendations { order: 1; width: 200px; flex-shrink: 0; padding: 20px 16px; background: white; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.recommendations h2 { margin: 0 0 20px; }
+.recommendationList { display: grid; gap: 24px; }
+.recommendationImage { display: block; position: relative; aspect-ratio: 4 / 5; background: white; margin-bottom: 8px; overflow: hidden; border-radius: 10px; }
+.recommendation p { margin: 5px 0 8px; font-size: 13px; }
+.add { display: block; width: 100%; padding: 9px 4px; border: 1px solid #222; border-radius: 9px; text-align: center; background: white; font-size: 12px; color: #171717; text-decoration: none; cursor: pointer; }
+.add:hover { background: #f7f1e5; }
+.add:disabled { opacity: .5; cursor: wait; }
+.error { font-size: 12px; color: #9d3528; margin-bottom: 12px; }
+.dialog :focus-visible { outline: 2px solid #667047; outline-offset: 3px; }
+@keyframes enter { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@media (max-width: 600px) {
+  .shell { display: block; overflow-y: auto; background: white; }
+  .bag { min-height: 100%; }
+  .items { flex: 1 0 auto; overflow: visible; }
+  .footer { position: sticky; bottom: 0; z-index: 1; }
+  .header { position: sticky; top: 0; z-index: 2; background: white; }
+  .recommendations { width: 100%; overflow: visible; border-top: 1px solid #ddd; }
+  .recommendationList { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+  .recommendation { width: 150px; flex-shrink: 0; }
+  .item { margin: 0 16px; }
+  .info { padding-right: 22px; }
+  .summary { padding: 12px 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .dialog[open] { animation: none; } }

@@ -26,11 +26,17 @@ function IconCart() {
 }
 
 export function CartLink({ className = "" }: { className?: string }) {
-  const { count, isReady } = useCart();
+  const { count, isReady, openCart } = useCart();
 
   return (
     <Link
       href="/cart"
+      onClick={(event) => {
+        if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        openCart();
+      }}
+      aria-haspopup="dialog"
       className={`text-brand-olive-dark hover:text-brand-terracotta transition-colors relative ${className || "p-2.5"}`}
       aria-label={count > 0 ? `Корзина: ${count} товаров` : "Корзина"}
     >

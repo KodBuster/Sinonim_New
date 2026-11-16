@@ -28,6 +28,7 @@ export type Product = {
   cut?: string;
   metal?: string;
   sizeOptions?: ProductSizeOption[];
+  availableSizeOptions?: ProductSizeOption[];
   artNo?: string;
   offerArtNos?: string[];
   sizeArtNos?: Record<string, string>;

@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { CatalogView } from "@/components/catalog/CatalogView";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildBreadcrumbJsonLd } from "@/lib/breadcrumb-schema";
-import { hasCatalogFilterParams } from "@/lib/catalog-utils";
+import { hasCatalogFilterParams, parseCatalogCategory } from "@/lib/catalog-utils";
 import { buildCatalogItemListJsonLd } from "@/lib/item-list-schema";
 import { buildPageMetadata } from "@/lib/metadata";
 import { getCatalogProducts } from "@/lib/products-service";
@@ -14,6 +14,7 @@ import type { Product } from "@/lib/products";
 type PageProps = {
   searchParams: Promise<{
     sort?: string;
+    category?: string;
     price?: string | string[];
     size?: string | string[];
     complect?: string;
@@ -25,6 +26,8 @@ export async function generateMetadata({ searchParams }: PageProps) {
   const query = new URLSearchParams();
 
   if (params.sort) query.set("sort", params.sort);
+  const category = parseCatalogCategory(params.category);
+  if (category) query.set("category", category);
   const prices = Array.isArray(params.price) ? params.price : params.price ? [params.price] : [];
   prices.forEach((value) => query.append("price", value));
   const sizes = Array.isArray(params.size) ? params.size : params.size ? [params.size] : [];
@@ -50,12 +53,12 @@ function CatalogFallback() {
 }
 
 export default async function ShopPage({ searchParams }: PageProps) {
-  const { sort } = await searchParams;
+  const { sort, category } = await searchParams;
   let initialProducts: Product[] = [];
   let initialError: string | undefined;
 
   try {
-    initialProducts = await getCatalogProducts({ sort: sort ?? "new" });
+    initialProducts = await getCatalogProducts({ category: parseCatalogCategory(category), sort: sort ?? "new" });
   } catch {
     initialError = "Не удалось загрузить каталог из AdvantShop";
   }

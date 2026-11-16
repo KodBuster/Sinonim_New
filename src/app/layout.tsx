@@ -3,6 +3,7 @@ import "@fontsource/inter/cyrillic-400.css";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/playfair-display/cyrillic-400.css";
 import { CartProvider } from "@/context/CartContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 import { FavoritesProvider } from "@/context/FavoritesContext";
 import { MangoOfficeChat } from "@/components/MangoOfficeChat";
 import { MessengerFab } from "@/components/MessengerFab";
@@ -47,6 +48,7 @@ export default function RootLayout({
             {children}
             <MessengerFab />
             <MangoOfficeChat />
+            <CartDrawer />
           </FavoritesProvider>
         </CartProvider>
       </body>

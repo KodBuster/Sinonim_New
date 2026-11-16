@@ -1,0 +1,25 @@
+.view { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; background: #fff; color: #111; scrollbar-width: thin; }
+.header { position: sticky; top: 0; z-index: 2; display: flex; justify-content: space-between; background: white; padding: 8px; }
+.header button { width: 40px; height: 40px; font-size: 27px; cursor: pointer; }
+.content { padding: 0 12px 24px; }
+.image { position: relative; height: clamp(170px, 31dvh, 300px); margin: 10px 0 12px; }
+.thumbs { display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 8px; }
+.thumbs button { position: relative; flex-shrink: 0; width: 40px; height: 48px; border: 1px solid transparent; cursor: pointer; }
+.thumbs button[aria-pressed="true"] { border-color: #111; }
+.content h2 { margin: 24px 0 8px; font-family: "Playfair Display", serif; font-size: 23px; line-height: 1.15; letter-spacing: -.6px; }
+.price { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 15px; }
+.price span { font-size: 12px; }
+.metal { font-size: 13px; margin: 16px 0; }
+.size { display: grid; gap: 5px; font-size: 13px; }
+.size select { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 9px; background: #fff; color: #111; }
+.size p { color: #a23b2b; }
+.actions { display: grid; gap: 12px; margin: 28px 0 12px; }
+.actions button { min-height: 50px; border: 1px solid #111; border-radius: 3px; padding: 12px; background: #111; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+.actions button + button { background: white; color: #111; }
+.actions button:disabled { opacity: .4; cursor: not-allowed; }
+.description { border-bottom: 1px solid #ddd; font-size: 13px; }
+.description summary { display: flex; justify-content: space-between; padding: 20px 0; font-size: 15px; font-weight: 600; list-style: none; cursor: pointer; }
+.description summary::-webkit-details-marker { display: none; }
+.description:not([open]) summary span { transform: rotate(180deg); }
+.description p { margin: 0 0 16px; line-height: 1.55; }
+.view :focus-visible { outline: 2px solid #667047; outline-offset: 2px; }

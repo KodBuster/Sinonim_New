@@ -59,7 +59,7 @@ export default async function ProductRoute({ params }: PageProps) {
   }
 
   const [relatedProducts, complectProducts] = await Promise.all([
-    getRelatedProducts(product).catch((error) => {
+    getRelatedProducts(product, 12).catch((error) => {
       console.error("Related products unavailable:", error);
       return [];
     }),
