@@ -18,10 +18,8 @@ import {
   BESTSELLER_ORDER,
   COLLECTIONS,
   FEATURED_ORDER,
-  FEATURED_TABS,
   HERO_SLIDES,
   JOURNAL,
-  PRODUCTS,
   PROMOS,
   productsByIds,
 } from "./data";
@@ -38,7 +36,7 @@ function useRedesignStyles() {
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
-    link.href = "/redesign/site.css?v=social-loop-commit-1";
+    link.href = "/redesign/site.css?v=mobile-video-swipe-1";
     document.documentElement.classList.add("synonym-redesign-active");
     document.body.classList.add("synonym-redesign-active");
     return () => {
@@ -84,35 +82,10 @@ function SectionHead({
       <h2>{title}</h2>
       {href && text ? (
         <Link className="text-link" href={href}>
-          {text}
+          {text} ↗
         </Link>
       ) : null}
     </div>
-  );
-}
-
-/** Навигация «линия + точка»: тонкая стрелка без квадрата */
-function LineArrow({ dir }: { dir: "prev" | "next" }) {
-  return (
-    <svg className="nav-line-icon" viewBox="0 0 28 12" fill="none" aria-hidden="true">
-      {dir === "prev" ? (
-        <path
-          d="M8 1 2 6l6 5M2 6h24"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ) : (
-        <path
-          d="m20 1 6 5-6 5M2 6h24"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-    </svg>
   );
 }
 
@@ -126,70 +99,25 @@ const SOCIAL_VIDEOS = [
   null,
   null,
 ];
-
-/** Три копии ряда — бесшовный круг; центр и шов ведём через DOM, без React-моргания */
-const SOCIAL_LOOP_COPIES = 3;
-const SOCIAL_BASE_LEN = SOCIAL_VIDEOS.length;
-const SOCIAL_MIDDLE_START = SOCIAL_BASE_LEN;
-const SOCIAL_SEED_INDEX = SOCIAL_MIDDLE_START + 3;
-const SOCIAL_SLIDES = Array.from({ length: SOCIAL_LOOP_COPIES }, (_, copy) =>
-  SOCIAL_VIDEOS.map((video, baseIndex) => ({
-    video,
-    baseIndex,
-    key: `${copy}-${baseIndex}`,
-    index: copy * SOCIAL_BASE_LEN + baseIndex,
-  })),
-).flat();
+const PLAYABLE_SOCIAL_INDICES = SOCIAL_VIDEOS.flatMap((video, index) => video ? [index] : []);
 
 type SocialProduct = { name: string; image: string; price: number; href: string };
-
-/** Только отрисовать первый кадр, не трогая уже играющий ролик */
-function paintFirstFrame(video: HTMLVideoElement) {
-  if (!video.paused) return;
-  const seek = () => {
-    if (!video.paused) return;
-    try {
-      if (video.currentTime > 0.05) return;
-      video.currentTime = 0.001;
-    } catch {
-      /* ignore */
-    }
-  };
-  if (video.readyState >= 1) seek();
-  else video.addEventListener("loadeddata", seek, { once: true });
-}
-
-/** Уход с ролика: пауза + первый кадр (статика). Seek только если нужно — дешевле на скролле */
-function deactivateVideo(video: HTMLVideoElement) {
-  if (!video.paused) video.pause();
-  if (video.currentTime < 0.05) return;
-  try {
-    video.currentTime = 0.001;
-  } catch {
-    /* ignore */
-  }
-}
 
 export function RedesignHome({ socialProducts }: { socialProducts: Record<string, SocialProduct> }) {
   useRedesignStyles();
 
   const [slide, setSlide] = useState(0);
-  const [featuredTab, setFeaturedTab] = useState<(typeof FEATURED_TABS)[number]["id"]>("all");
   const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const featuredRail = useRef<HTMLDivElement>(null);
   const socialRail = useRef<HTMLDivElement>(null);
   const socialCenter = useRef<HTMLDivElement>(null);
   const socialVideos = useRef<(HTMLVideoElement | null)[]>([]);
-  /** Абсолютный индекс карточки в центре — только ref, класс .center пишем в DOM */
-  const activeSocialAbs = useRef(SOCIAL_SEED_INDEX);
-  const activeSocialBase = useRef(SOCIAL_SEED_INDEX % SOCIAL_BASE_LEN);
   const [loadSocialVideos, setLoadSocialVideos] = useState(false);
   const [liveSocialProducts, setLiveSocialProducts] = useState<Record<string, SocialProduct>>();
+  const [activeSocialVideo, setActiveSocialVideo] = useState(3);
+  const socialTouch = useRef<{ x: number; y: number } | null>(null);
+  const suppressSocialClick = useRef(false);
   const touchX = useRef(0);
-  const socialJumping = useRef(false);
-  const socialSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  /** Ручная пауза на активном ролике — settle не должен снова жать play */
-  const socialUserPaused = useRef(false);
 
   useEffect(() => {
     const rail = socialRail.current;
@@ -212,224 +140,29 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
     };
   }, []);
 
-  function socialCards(): HTMLElement[] {
+  function selectSocialVideo(index: number) {
     const rail = socialRail.current;
-    if (!rail) return [];
-    return [...rail.querySelectorAll<HTMLElement>(".social-card")];
-  }
+    const video = socialVideos.current[index];
+    if (!rail || !video) return;
 
-  function socialPeriodWidth(): number {
-    const cards = socialCards();
-    if (cards.length < SOCIAL_BASE_LEN + 1) return 0;
-    return cards[SOCIAL_BASE_LEN].offsetLeft - cards[0].offsetLeft;
-  }
-
-  function nearestSocialIndex(): number {
-    const rail = socialRail.current;
-    const cards = socialCards();
-    if (!rail || !cards.length) return activeSocialAbs.current;
-    const mid = rail.getBoundingClientRect().left + rail.getBoundingClientRect().width / 2;
-    let best = 0;
-    let bestDist = Infinity;
-    cards.forEach((card, i) => {
-      const r = card.getBoundingClientRect();
-      const d = Math.abs(r.left + r.width / 2 - mid);
-      if (d < bestDist) {
-        bestDist = d;
-        best = i;
-      }
-    });
-    return best;
-  }
-
-  function markSocialCenter(absIndex: number) {
-    socialCards().forEach((card, i) => {
-      card.classList.toggle("center", i === absIndex);
-    });
-  }
-
-  function toMiddleSocialAbs(absIndex: number) {
-    return SOCIAL_MIDDLE_START + (absIndex % SOCIAL_BASE_LEN);
-  }
-
-  function isEdgeSocialAbs(absIndex: number) {
-    return absIndex < SOCIAL_BASE_LEN || absIndex >= SOCIAL_BASE_LEN * 2;
-  }
-
-  /** На шве отключаем transition высоты — иначе .center прыгает на клон и «расширение» дёргается */
-  function setSocialInstant(on: boolean) {
-    const rail = socialRail.current;
-    if (!rail) return;
-    rail.classList.toggle("social-rail--instant", on);
-    if (on) void rail.offsetWidth;
-  }
-
-  function scrollSocialCardToCenter(index: number, behavior: ScrollBehavior) {
-    const rail = socialRail.current;
-    const card = socialCards()[index];
-    if (!rail || !card) return;
-    const railRect = rail.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-    rail.scrollBy({
-      left: cardRect.left + cardRect.width / 2 - railRect.left - railRect.width / 2,
-      behavior,
-    });
-  }
-
-  /**
-   * Активный ролик крутится loop с 1-го кадра.
-   * Остальные — статика на 1-м кадре.
-   * Тот же активный уже играет — не трогаем (иначе обрыв цикла).
-   */
-  function playSocialAt(absIndex: number) {
-    const next = socialVideos.current[absIndex];
-    const prevAbs = activeSocialAbs.current;
-    const switching = absIndex !== prevAbs;
-    const sameBase =
-      switching && prevAbs % SOCIAL_BASE_LEN === absIndex % SOCIAL_BASE_LEN;
-    const prev = socialVideos.current[prevAbs];
-
-    socialVideos.current.forEach((other, i) => {
-      if (!other || i === absIndex) return;
-      if (sameBase && i === prevAbs) {
-        other.pause();
-        return;
-      }
-      deactivateVideo(other);
-    });
-
-    if (!next) {
-      socialUserPaused.current = false;
+    if (index === activeSocialVideo) {
+      if (video.paused) void video.play().catch(() => {});
+      else video.pause();
       return;
     }
 
-    // Тот же слот уже играет по кругу — не перезапускать
-    if (!switching && !next.paused) return;
-    // Ручная пауза на активном
-    if (!switching && socialUserPaused.current) return;
-
-    if (switching) {
-      socialUserPaused.current = false;
-      if (sameBase && prev && Number.isFinite(prev.currentTime)) {
-        try {
-          next.currentTime = prev.currentTime;
-        } catch {
-          /* ignore */
-        }
-      } else {
-        try {
-          next.currentTime = 0.001;
-        } catch {
-          /* ignore */
-        }
-      }
-    }
-
-    void next.play().catch(() => {});
-  }
-
-  function applySocialCenter(absIndex: number, opts?: { play?: boolean }) {
-    markSocialCenter(absIndex);
-    if (opts?.play !== false) playSocialAt(absIndex);
-    activeSocialAbs.current = absIndex;
-    activeSocialBase.current = absIndex % SOCIAL_BASE_LEN;
-  }
-
-  /** Во время свайпа только пауза соседей; сброс на 1-й кадр — в settle/playSocialAt */
-  function pauseSocialExcept(absIndex: number) {
-    socialVideos.current.forEach((other, i) => {
-      if (!other || i === absIndex) return;
-      if (!other.paused) other.pause();
+    socialVideos.current.forEach((other) => {
+      if (other !== video) other?.pause();
     });
-  }
-
-  /** Держим скролл в средней копии сдвигом на ширину периода — без смены «картинки» */
-  function normalizeSocialLoop() {
-    const rail = socialRail.current;
-    if (!rail || socialJumping.current) return nearestSocialIndex();
-
-    let best = nearestSocialIndex();
-    const period = socialPeriodWidth();
-    if (period <= 0) return best;
-
-    const shift = (delta: number) => {
-      socialJumping.current = true;
-      const snap = rail.style.scrollSnapType;
-      rail.style.scrollSnapType = "none";
-      rail.scrollLeft += delta;
-      void rail.offsetWidth;
-      rail.style.scrollSnapType = snap;
-      socialJumping.current = false;
-    };
-
-    if (best < SOCIAL_BASE_LEN) {
-      shift(period);
-      best += SOCIAL_BASE_LEN;
-    } else if (best >= SOCIAL_BASE_LEN * 2) {
-      shift(-period);
-      best -= SOCIAL_BASE_LEN;
-    }
-    return best;
-  }
-
-  function selectSocialVideo(absIndex: number) {
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const video = socialVideos.current[absIndex];
-
-    // Повторный тап по центру — пауза / продолжить (без сброса на первый кадр)
-    if (absIndex === activeSocialAbs.current) {
-      if (!video) return;
-      if (video.paused) {
-        socialUserPaused.current = false;
-        void video.play().catch(() => {});
-      } else {
-        socialUserPaused.current = true;
-        video.pause();
-      }
-      return;
-    }
-
-    // Тап по другой карточке — короткий путь; уход сбросит предыдущий на 1-й кадр
-    socialUserPaused.current = false;
-    scrollSocialCardToCenter(absIndex, reduce ? "instant" : "smooth");
-    applySocialCenter(absIndex);
-  }
-
-  /**
-   * Шов только на полной остановке скролла (не в жесте!).
-   * Прыжок scrollLeft во время драга даёт затык «после шва» и ломает плавную высоту.
-   */
-  function remapSocialSeamQuiet(rawEdgeIndex: number): number {
-    const target = toMiddleSocialAbs(rawEdgeIndex);
-    setSocialInstant(true);
-    markSocialCenter(target);
-    const best = normalizeSocialLoop();
-    const finalIndex = isEdgeSocialAbs(best) ? target : best;
-    activeSocialAbs.current = finalIndex;
-    activeSocialBase.current = finalIndex % SOCIAL_BASE_LEN;
-    void socialRail.current?.offsetWidth;
-    requestAnimationFrame(() => setSocialInstant(false));
-    return finalIndex;
-  }
-
-  const settleSocialRail = useCallback(() => {
-    if (socialJumping.current) return;
-
-    let raw = nearestSocialIndex();
-    if (isEdgeSocialAbs(raw)) {
-      raw = remapSocialSeamQuiet(raw);
-    } else {
-      markSocialCenter(raw);
-      activeSocialAbs.current = raw;
-      activeSocialBase.current = raw % SOCIAL_BASE_LEN;
-    }
-
-    const target = raw;
-    requestAnimationFrame(() => {
-      playSocialAt(target);
+    setActiveSocialVideo(index);
+    const card = video.getBoundingClientRect();
+    const viewport = rail.getBoundingClientRect();
+    rail.scrollTo({
+      left: rail.scrollLeft + card.left + card.width / 2 - viewport.left - viewport.width / 2,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- логика на refs
-  }, []);
+    void video.play().catch(() => {});
+  }
 
   useEffect(() => {
     const rail = socialRail.current;
@@ -441,54 +174,13 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
       const cardRect = center.getBoundingClientRect();
       rail.scrollLeft += cardRect.left + cardRect.width / 2 - railRect.left - railRect.width / 2;
       observer.disconnect();
-      applySocialCenter(SOCIAL_SEED_INDEX);
     });
     observer.observe(rail);
     observer.observe(center);
     return () => observer.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!loadSocialVideos) return;
-    playSocialAt(activeSocialAbs.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- логика на refs
-  }, [loadSocialVideos]);
-
-  useEffect(() => {
-    const rail = socialRail.current;
-    if (!rail) return;
-
-    const onScroll = () => {
-      if (socialJumping.current) return;
-
-      // В жесте только плавный .center — шов НЕ трогаем (иначе затык и «тыр-тыр»)
-      const raw = nearestSocialIndex();
-      if (raw !== activeSocialAbs.current) {
-        markSocialCenter(raw);
-        pauseSocialExcept(raw);
-        activeSocialAbs.current = raw;
-        activeSocialBase.current = raw % SOCIAL_BASE_LEN;
-      }
-
-      if (socialSettleTimer.current) clearTimeout(socialSettleTimer.current);
-      // Чуть дольше ждём полной остановки, потом тихий шов + play
-      socialSettleTimer.current = setTimeout(settleSocialRail, 220);
-    };
-
-    rail.addEventListener("scroll", onScroll, { passive: true });
-    rail.addEventListener("scrollend", settleSocialRail);
-    return () => {
-      rail.removeEventListener("scroll", onScroll);
-      rail.removeEventListener("scrollend", settleSocialRail);
-      if (socialSettleTimer.current) clearTimeout(socialSettleTimer.current);
-    };
-  }, [settleSocialRail]);
-
-  const featuredProducts = useMemo(() => {
-    if (featuredTab === "all") return productsByIds(FEATURED_ORDER);
-    return PRODUCTS.filter((p) => p.category === featuredTab);
-  }, [featuredTab]);
+  const featuredProducts = useMemo(() => productsByIds(FEATURED_ORDER), []);
 
   const bestsellers = useMemo(() => productsByIds(BESTSELLER_ORDER), []);
 
@@ -580,7 +272,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   <h1>{s.title}</h1>
                   <p>{s.description}</p>
                   <Link className="hero-cta" href={s.href}>
-                    {s.cta}
+                    {s.cta} <span>↗</span>
                   </Link>
                 </div>
               </article>
@@ -595,7 +287,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                 startHero();
               }}
             >
-              <LineArrow dir="prev" />
+              ‹
             </button>
             <div className="hero-dots">
               {HERO_SLIDES.map((_, i) => (
@@ -620,8 +312,11 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                 startHero();
               }}
             >
-              <LineArrow dir="next" />
+              ›
             </button>
+          </div>
+          <div className="hero-pagination">
+            0{slide + 1} / 0{HERO_SLIDES.length}
           </div>
         </section>
 
@@ -633,53 +328,30 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
         >
           <div className="featured-products-top">
             <div className="featured-products-intro">
-              <h2 id="featured-products-title">Товары СИНОНИМ</h2>
-              <p>
-                Украшения, которые становятся частью вашей истории. Подборка настоящих изделий из
-                каталога.
-              </p>
+              <h2 id="featured-products-title">Что сегодня выберите?</h2>
             </div>
           </div>
           <div className="featured-products-controls">
-            <div className="featured-tabs" role="tablist" aria-label="Товары по категориям">
-              {FEATURED_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  className={`featured-tab ${featuredTab === tab.id ? "active" : ""}`}
-                  aria-selected={featuredTab === tab.id}
-                  onClick={() => {
-                    setFeaturedTab(tab.id);
-                    if (featuredRail.current) featuredRail.current.scrollLeft = 0;
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <div className="featured-arrows">
+            <div className="featured-arrows ml-auto">
               <button
                 type="button"
                 aria-label="Предыдущие товары"
                 onClick={() => stepFeatured(-1)}
               >
-                <LineArrow dir="prev" />
+                ‹
               </button>
               <button
                 type="button"
                 aria-label="Следующие товары"
                 onClick={() => stepFeatured(1)}
               >
-                <LineArrow dir="next" />
+                ›
               </button>
             </div>
           </div>
           <div
             className="featured-products-viewport"
             id="featured-panel"
-            role="tabpanel"
-            aria-labelledby="featured-products-title"
           >
             <div
               className="cards-scroll featured-products-track"
@@ -702,7 +374,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <Image src={c.photo} alt="" fill sizes="(max-width: 960px) 50vw, 25vw" />
               <span className="category-tile-copy">
                 <span className="category-tile-slogan">{c.slogan}</span>
-                <span className="category-tile-name">{c.name}</span>
+                <span className="category-tile-name">{c.name} <span aria-hidden="true">↗</span></span>
               </span>
             </Link>
           ))}
@@ -725,7 +397,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   ?.scrollBy({ left: -440, behavior: "smooth" })
               }
             >
-              <LineArrow dir="prev" />
+              ←
             </button>
             <button
               type="button"
@@ -736,7 +408,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   ?.scrollBy({ left: 440, behavior: "smooth" })
               }
             >
-              <LineArrow dir="next" />
+              →
             </button>
           </div>
         </section>
@@ -749,7 +421,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <span className="promo-text">
                 <strong>{p.title}</strong>
                 <span>{p.sub}</span>
-                <u>Смотреть подборку</u>
+                <u>Смотреть подборку ↗</u>
               </span>
             </Link>
           ))}
@@ -777,40 +449,63 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
 
         <section className="social-section wrap" data-home-block="6">
           <SectionHead title="Украшения в движении" />
-          <div ref={socialRail} className="social-rail" id="social-rail">
-            {SOCIAL_SLIDES.map((slideItem) => {
-              const { video, baseIndex, key, index: i } = slideItem;
-              const product = video ? (liveSocialProducts?.[video.article] ?? socialProducts[video.article]) : undefined;
-              const isCenterSeed = i === SOCIAL_SEED_INDEX;
+          <div
+            ref={socialRail}
+            className="social-rail"
+            id="social-rail"
+            onTouchStart={(event) => {
+              if (!window.matchMedia("(max-width: 680px)").matches) return;
+              const touch = event.touches[0];
+              suppressSocialClick.current = false;
+              socialTouch.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
+            }}
+            onTouchEnd={(event) => {
+              const start = socialTouch.current;
+              socialTouch.current = null;
+              if (!start) return;
+              const touch = event.changedTouches[0];
+              const x = start.x - touch.clientX;
+              const y = Math.abs(touch.clientY - start.y);
+              if (Math.abs(x) <= Math.max(24, y)) return;
+              suppressSocialClick.current = true;
+              const current = PLAYABLE_SOCIAL_INDICES.indexOf(activeSocialVideo);
+              const next = PLAYABLE_SOCIAL_INDICES[current + (x > 0 ? 1 : -1)];
+              if (next !== undefined) selectSocialVideo(next);
+            }}
+            onTouchCancel={() => { socialTouch.current = null; }}
+            onClickCapture={(event) => {
+              if (!suppressSocialClick.current || event.detail === 0) return;
+              suppressSocialClick.current = false;
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          >
+            {SOCIAL_VIDEOS.map((video, i) => {
+              const product = video ? liveSocialProducts?.[video.article] ?? socialProducts[video.article] : undefined;
               return (
                 <div
-                  key={key}
-                  ref={isCenterSeed ? socialCenter : undefined}
-                  className={`social-card${isCenterSeed ? " center" : ""}`}
-                  data-social-index={i}
-                  aria-label={video ? undefined : `Концепция будущего видео ${baseIndex + 1}`}
+                  key={i}
+                  ref={i === 3 ? socialCenter : undefined}
+                  className={`social-card ${i === activeSocialVideo ? "center" : ""}`}
+                  aria-label={video ? undefined : `Концепция будущего видео ${i + 1}`}
                 >
                   <div className="social-card-media">
                     {video ? (
                       <>
                         <video
-                          ref={(element) => {
-                            socialVideos.current[i] = element;
-                            if (element) paintFirstFrame(element);
-                          }}
+                          ref={(element) => { socialVideos.current[i] = element; }}
                           src={loadSocialVideos ? video.src : undefined}
-                          className="social-card-video"
-                          preload="auto"
+                          className="block h-full w-full object-cover"
+                          autoPlay={i === 3 && activeSocialVideo === 3}
+                          preload="none"
                           muted
                           loop
                           playsInline
-                          onLoadedMetadata={(e) => paintFirstFrame(e.currentTarget)}
-                          onLoadedData={(e) => paintFirstFrame(e.currentTarget)}
                         />
                         <button
                           type="button"
-                          className="social-card-hit"
-                          aria-label={`Видео ${baseIndex + 1}: воспроизвести или пауза`}
+                          className="absolute inset-0 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
+                          aria-label={i === activeSocialVideo ? "Пауза или воспроизведение текущего видео" : `Воспроизвести видео ${i - 1} в центре`}
                           onClick={() => selectSocialVideo(i)}
                         />
                       </>
@@ -818,17 +513,11 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                       <>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={`${ASSET}/models/model-${String(baseIndex + 1).padStart(2, "0")}.webp`}
-                          alt={`Рекламный портрет модели ${baseIndex + 1} с серебряными украшениями`}
+                          src={`${ASSET}/models/model-${String(i + 1).padStart(2, "0")}.webp`}
+                          alt={`Рекламный портрет модели ${i + 1} с серебряными украшениями`}
                           loading="lazy"
                         />
                         <span className="social-placeholder">ВИДЕО СКОРО</span>
-                        <button
-                          type="button"
-                          className="social-card-hit"
-                          aria-label={`Показать карточку ${baseIndex + 1} в центре`}
-                          onClick={() => selectSocialVideo(i)}
-                        />
                       </>
                     )}
                   </div>
@@ -842,12 +531,10 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                         <span>{formatPrice(product.price)}</span>
                       </span>
                     </Link>
-                  ) : (
-                    <div className="social-product-spacer" aria-hidden="true" />
-                  )}
+                  ) : <div className="social-product-spacer" aria-hidden="true" />}
                 </div>
               );
-            })}
+              })}
           </div>
         </section>
 
@@ -890,7 +577,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                 </div>
                 <span className="eyebrow">{b.tag}</span>
                 <h3>{b.title}</h3>
-                <span className="text-link">Читать</span>
+                <span className="text-link">Читать ↗</span>
               </Link>
             ))}
           </div>
