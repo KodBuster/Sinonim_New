@@ -35,7 +35,7 @@ function useRedesignStyles() {
       link.rel = "stylesheet";
       document.head.appendChild(link);
     }
-    link.href = "/redesign/site.css?v=store-benefits-3";
+    link.href = "/redesign/site.css?v=mobile-video-swipe-1";
     document.documentElement.classList.add("synonym-redesign-active");
     document.body.classList.add("synonym-redesign-active");
     return () => {
@@ -97,6 +97,7 @@ const SOCIAL_VIDEOS = [
   null,
   null,
 ];
+const PLAYABLE_SOCIAL_INDICES = SOCIAL_VIDEOS.flatMap((video, index) => video ? [index] : []);
 
 type SocialProduct = { name: string; image: string; price: number; href: string };
 
@@ -111,32 +112,13 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
   const socialVideos = useRef<(HTMLVideoElement | null)[]>([]);
   const [activeSocialVideo, setActiveSocialVideo] = useState(3);
   const socialTouch = useRef<{ x: number; y: number } | null>(null);
-  const socialSwipe = useRef<-1 | 0 | 1>(0);
-  const socialScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressSocialClick = useRef(false);
   const touchX = useRef(0);
-
-  function settleSocialSwipe() {
-    if (!socialSwipe.current || socialTouch.current) return;
-    if (socialScrollTimer.current) clearTimeout(socialScrollTimer.current);
-    socialScrollTimer.current = setTimeout(() => {
-      const direction = socialSwipe.current;
-      if (!direction || socialTouch.current) return;
-      socialSwipe.current = 0;
-      const playable = SOCIAL_VIDEOS.flatMap((video, index) => video ? [index] : []);
-      const next = playable[playable.indexOf(activeSocialVideo) + direction];
-      if (next !== undefined) selectSocialVideo(next);
-    }, 160);
-  }
-
-  useEffect(() => () => {
-    if (socialScrollTimer.current) clearTimeout(socialScrollTimer.current);
-  }, []);
 
   function selectSocialVideo(index: number) {
     const rail = socialRail.current;
     const video = socialVideos.current[index];
     if (!rail || !video) return;
-    socialSwipe.current = 0;
 
     if (index === activeSocialVideo) {
       if (video.paused) void video.play().catch(() => {});
@@ -148,10 +130,10 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
       if (other !== video) other?.pause();
     });
     setActiveSocialVideo(index);
-    const card = video.parentElement!.getBoundingClientRect();
+    const card = video.getBoundingClientRect();
     const viewport = rail.getBoundingClientRect();
-    rail.scrollBy({
-      left: card.left + card.width / 2 - viewport.left - viewport.width / 2,
+    rail.scrollTo({
+      left: rail.scrollLeft + card.left + card.width / 2 - viewport.left - viewport.width / 2,
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
     void video.play().catch(() => {});
@@ -446,12 +428,11 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
             ref={socialRail}
             className="social-rail"
             id="social-rail"
-            onScroll={settleSocialSwipe}
             onTouchStart={(event) => {
               if (!window.matchMedia("(max-width: 680px)").matches) return;
               const touch = event.touches[0];
-              socialSwipe.current = 0;
-              socialTouch.current = { x: touch.clientX, y: touch.clientY };
+              suppressSocialClick.current = false;
+              socialTouch.current = event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
             }}
             onTouchEnd={(event) => {
               const start = socialTouch.current;
@@ -460,10 +441,19 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               const touch = event.changedTouches[0];
               const x = start.x - touch.clientX;
               const y = Math.abs(touch.clientY - start.y);
-              socialSwipe.current = Math.abs(x) > Math.max(24, y) ? (x > 0 ? 1 : -1) : 0;
-              settleSocialSwipe();
+              if (Math.abs(x) <= Math.max(24, y)) return;
+              suppressSocialClick.current = true;
+              const current = PLAYABLE_SOCIAL_INDICES.indexOf(activeSocialVideo);
+              const next = PLAYABLE_SOCIAL_INDICES[current + (x > 0 ? 1 : -1)];
+              if (next !== undefined) selectSocialVideo(next);
             }}
             onTouchCancel={() => { socialTouch.current = null; }}
+            onClickCapture={(event) => {
+              if (!suppressSocialClick.current || event.detail === 0) return;
+              suppressSocialClick.current = false;
+              event.preventDefault();
+              event.stopPropagation();
+            }}
           >
             {SOCIAL_VIDEOS.map((video, i) => {
               const product = video ? socialProducts[video.article] : undefined;

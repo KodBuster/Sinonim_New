@@ -757,6 +757,9 @@ body.synonym-redesign-active [data-messenger-fab] {
   .social-section .social-rail {
     --social-card-width: min(300px, 68cqw);
     --social-rail-padding: 10px;
+    overflow-x: hidden;
+    scroll-snap-type: none;
+    touch-action: pan-y pinch-zoom;
   }
 }
 
