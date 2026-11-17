@@ -9,6 +9,7 @@ import { MangoOfficeChat } from "@/components/MangoOfficeChat";
 import { MessengerFab } from "@/components/MessengerFab";
 import { PageVisitTracker } from "@/components/analytics/PageVisitTracker";
 import { YandexMetrika } from "@/components/analytics/YandexMetrika";
+import { ScrollToTopOnNavigate } from "@/components/ScrollToTopOnNavigate";
 import { getSiteUrl } from "@/lib/site-url";
 import { getSiteVerification } from "@/lib/site-verification";
 import "./globals.css";
@@ -43,6 +44,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-body">
         <YandexMetrika />
         <PageVisitTracker />
+        <ScrollToTopOnNavigate />
         <CartProvider>
           <FavoritesProvider>
             {children}

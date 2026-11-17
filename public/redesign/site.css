@@ -799,4 +799,47 @@ body { display: block !important; }
   .store-benefits > a { min-height: 110px; gap: 8px; padding-inline: 6px; }
   .store-benefits svg { width: 32px; height: 32px; }
 }
+
+/* Мобилка: без квадратных стрелок (свайп + автолистание), без 01/03, точки hero — линия+точка */
+@media (max-width: 680px) {
+  .synonym-redesign-root .hero-pagination {
+    display: none !important;
+  }
+  .synonym-redesign-root .hero-controls > button {
+    display: none;
+  }
+  .synonym-redesign-root .hero-controls {
+    gap: 0;
+    pointer-events: none;
+  }
+  .synonym-redesign-root .hero-dots {
+    gap: 7px;
+    pointer-events: auto;
+  }
+  .synonym-redesign-root .hero-dots button {
+    width: 4px;
+    height: 4px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.45);
+    padding: 0;
+  }
+  .synonym-redesign-root .hero-dots button.active {
+    width: 18px;
+    height: 1.5px;
+    border-radius: 0;
+    background: #fff;
+  }
+  .synonym-redesign-root .featured-arrows,
+  .synonym-redesign-root .featured-products-controls {
+    display: none;
+  }
+  .synonym-redesign-root .scroll-actions {
+    display: none;
+  }
+  /* Диагональные ↗ в CTA героя и плитках категорий */
+  .synonym-redesign-root .home-corner-arrow {
+    display: none;
+  }
+}
 }

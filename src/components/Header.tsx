@@ -76,10 +76,11 @@ export function Header({ overlay = false }: HeaderProps) {
         ref={headerRef}
         className="group/header fixed inset-x-0 top-0 z-[100] border-b border-transparent bg-white/20 backdrop-blur-[8px] transition-[background-color,border-color,backdrop-filter] duration-200 hover:border-[var(--color-brand-sand,#e8e8e8)] hover:bg-white hover:backdrop-blur-none"
       >
-        <div className="flex h-[60px] items-center gap-0 px-2.5 md:h-[66px] md:px-4 lg:px-5">
+        {/* На мобилке лого не должно выталкивать избранное/корзину за край */}
+        <div className="flex h-[60px] w-full min-w-0 items-center gap-0 overflow-x-clip px-2 md:h-[66px] md:overflow-visible md:px-4 lg:px-5">
           <Link
             href="/menu"
-            className={`${iconButtonClass} mr-1.5 shrink-0 p-2 lg:hidden`}
+            className={`${iconButtonClass} mr-0.5 shrink-0 p-1.5 sm:mr-1.5 sm:p-2 lg:hidden`}
             aria-label="Открыть меню"
           >
             <IconMenu />
@@ -87,7 +88,7 @@ export function Header({ overlay = false }: HeaderProps) {
 
           <Link
             href="/"
-            className="mr-1 min-w-0 md:mr-10 md:shrink-0 lg:mr-14 xl:mr-16"
+            className="mr-2 min-w-0 shrink md:mr-10 md:shrink-0 lg:mr-14 xl:mr-16"
             aria-label="СИНОНИМ — главная"
           >
             <Image
@@ -96,7 +97,7 @@ export function Header({ overlay = false }: HeaderProps) {
               width={380}
               height={64}
               priority
-              className="h-8 w-auto max-w-full object-contain sm:h-9 sm:max-w-[190px] md:h-10"
+              className="h-7 w-auto max-w-[min(42vw,148px)] object-contain sm:h-9 sm:max-w-[190px] md:h-10"
             />
           </Link>
 
@@ -115,22 +116,33 @@ export function Header({ overlay = false }: HeaderProps) {
             ))}
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-0 pr-0.5 sm:gap-1 sm:pr-0">
             <Link
               href="/search"
-              className={`${iconButtonClass} p-2 sm:p-2.5`}
+              className={`${iconButtonClass} p-1.5 sm:p-2.5`}
               aria-label="Поиск по каталогу"
             >
-              <IconSearch />
+              <IconSearch className="size-5 sm:size-6 lg:size-5" />
             </Link>
-            <Link href="/account" className={`${iconButtonClass} p-2 sm:p-2.5`} aria-label="Личный кабинет">
-              <svg className="size-5 sm:size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+            <Link
+              href="/account"
+              className={`${iconButtonClass} p-1.5 sm:p-2.5`}
+              aria-label="Личный кабинет"
+            >
+              <svg
+                className="size-5 sm:size-6 lg:size-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                aria-hidden="true"
+              >
                 <circle cx="12" cy="7.5" r="3.5" />
                 <path d="M5 21v-2a7 7 0 0 1 14 0v2" strokeLinecap="round" />
               </svg>
             </Link>
-            <FavoritesLink className="touch-manipulation p-2 sm:p-2.5" />
-            <CartLink className="touch-manipulation p-2 sm:p-2.5" />
+            <FavoritesLink className="touch-manipulation p-1.5 sm:p-2.5 [&_svg]:size-5 sm:[&_svg]:size-6 lg:[&_svg]:size-5" />
+            <CartLink className="touch-manipulation p-1.5 sm:p-2.5 [&_svg]:size-5 sm:[&_svg]:size-6 lg:[&_svg]:size-5" />
           </div>
         </div>
       </header>

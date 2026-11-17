@@ -246,7 +246,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   <h1>{s.title}</h1>
                   <p>{s.description}</p>
                   <Link className="hero-cta" href={s.href}>
-                    {s.cta} <span>↗</span>
+                    {s.cta} <span className="home-corner-arrow" aria-hidden="true">↗</span>
                   </Link>
                 </div>
               </article>
@@ -348,7 +348,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <Image src={c.photo} alt="" fill sizes="(max-width: 960px) 50vw, 25vw" />
               <span className="category-tile-copy">
                 <span className="category-tile-slogan">{c.slogan}</span>
-                <span className="category-tile-name">{c.name} <span aria-hidden="true">↗</span></span>
+                <span className="category-tile-name">{c.name} <span className="home-corner-arrow" aria-hidden="true">↗</span></span>
               </span>
             </Link>
           ))}
@@ -395,7 +395,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <span className="promo-text">
                 <strong>{p.title}</strong>
                 <span>{p.sub}</span>
-                <u>Смотреть подборку ↗</u>
+                <u>Смотреть подборку <span className="home-corner-arrow" aria-hidden="true">↗</span></u>
               </span>
             </Link>
           ))}
@@ -551,7 +551,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                 </div>
                 <span className="eyebrow">{b.tag}</span>
                 <h3>{b.title}</h3>
-                <span className="text-link">Читать ↗</span>
+                <span className="text-link">Читать <span className="home-corner-arrow" aria-hidden="true">↗</span></span>
               </Link>
             ))}
           </div>

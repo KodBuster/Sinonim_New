@@ -561,10 +561,16 @@ function MobileImageZoom({ src, alt, onClose }: MobileImageZoomProps) {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [onClose]);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -626,12 +632,13 @@ function MobileImageZoom({ src, alt, onClose }: MobileImageZoomProps) {
     panStart.current = null;
   };
 
+  // Выше шапки (z-100) и FAB, иначе крестик оказывается под корзиной
   return createPortal(
-    <div className="fixed inset-0 z-[90] bg-white" role="dialog" aria-modal="true" aria-label="Увеличенное изображение">
+    <div className="fixed inset-0 z-[130] bg-white" role="dialog" aria-modal="true" aria-label="Увеличенное изображение">
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-3 right-3 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-brand-olive/20 bg-white text-brand-olive-dark shadow-lg"
+        className="absolute right-[max(0.75rem,env(safe-area-inset-right))] z-30 flex h-11 w-11 items-center justify-center rounded-full border border-brand-olive/20 bg-white text-brand-olive-dark shadow-lg top-[max(0.75rem,env(safe-area-inset-top))]"
         aria-label="Закрыть"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -646,7 +653,7 @@ function MobileImageZoom({ src, alt, onClose }: MobileImageZoomProps) {
 
       <div
         ref={viewportRef}
-        className="flex h-full w-full items-center justify-center overflow-hidden px-4 pt-14 pb-6 touch-none"
+        className="flex h-full w-full items-center justify-center overflow-hidden px-4 pt-[calc(3.5rem+env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom))] touch-none"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
