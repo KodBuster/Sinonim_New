@@ -9,6 +9,8 @@ type PageMetadataOptions = {
   noIndex?: boolean;
   robotsFollow?: boolean;
   ogImage?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   ogType?: "website" | "article";
 };
 
@@ -19,6 +21,8 @@ export function buildPageMetadata({
   noIndex = false,
   robotsFollow = false,
   ogImage,
+  ogImageWidth = 1200,
+  ogImageHeight = 630,
   ogType = "website",
 }: PageMetadataOptions): Metadata {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -41,8 +45,8 @@ export function buildPageMetadata({
       images: [
         {
           url: imageUrl,
-          width: 1200,
-          height: 630,
+          width: ogImageWidth,
+          height: ogImageHeight,
           alt: title,
         },
       ],

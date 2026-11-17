@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { trackAddToCart } from "@/lib/analytics/metrika";
@@ -8,6 +8,7 @@ import { FREE_DELIVERY_THRESHOLD } from "@/lib/checkout";
 import { formatInsertMassLabel } from "@/lib/synthetic-diamond-labels";
 import { formatPrice, type ProductDetails } from "@/lib/products";
 import { ProductRatingShare } from "./ProductRatingShare";
+import { ProductStickyBuy } from "./ProductStickyBuy";
 import { useProductSelection } from "./ProductSelectionContext";
 import { ProductAccordions } from "./ProductAccordions";
 
@@ -112,6 +113,8 @@ export function ProductConfigurator({
   const cartStoneLabel = formatInsertMassLabel(diamondWeight);
   const [added, setAdded] = useState(false);
   const [sizeTouched, setSizeTouched] = useState(false);
+  const buyButton = useRef<HTMLButtonElement>(null);
+  const sizeChoices = useRef<HTMLDivElement>(null);
   const { addItem } = useCart();
   const selectedSizeStock =
     selectedSize && product.sizeStockAmounts
@@ -128,6 +131,8 @@ export function ProductConfigurator({
   const handleAddToCart = () => {
     if (needsSize && selectedSize == null) {
       setSizeTouched(true);
+      sizeChoices.current?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+      sizeChoices.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
       return;
     }
     if (!canBuy) return;
@@ -194,6 +199,7 @@ export function ProductConfigurator({
               )}
             </p>
             <div
+              ref={sizeChoices}
               className="flex flex-wrap gap-2"
               role="radiogroup"
               aria-labelledby="size-label"
@@ -234,6 +240,7 @@ export function ProductConfigurator({
         <button
           type="button"
           data-add-to-cart
+          ref={buyButton}
           onClick={handleAddToCart}
           disabled={product.inStock === false || !selectedSizeAvailable}
           className="product-video-safe-label w-full bg-brand-olive-dark px-6 py-3.5 text-center text-sm font-medium tracking-[0.04em] text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
@@ -267,6 +274,14 @@ export function ProductConfigurator({
       ) : null}
 
       {showAccordions ? <ProductAccordions product={product} /> : null}
+      <ProductStickyBuy
+        anchor={buyButton}
+        name={product.name}
+        price={price}
+        disabled={product.inStock === false || !selectedSizeAvailable}
+        label={product.inStock === false || !selectedSizeAvailable ? "Скоро будет" : added ? "Добавлено ✓" : needsSize && !selectedSize ? "Выберите размер" : "В корзину"}
+        onBuy={handleAddToCart}
+      />
     </div>
   );
 }

@@ -33,7 +33,9 @@ export async function generateMetadata({ params }: PageProps) {
       title: `${product.name} — купить в Синоним`,
       description: buildProductMetaDescription(product),
       path: `/products/${canonicalSlug}`,
-      ogImage: product.images[0] ?? product.image,
+      ogImage: `/api/products/${encodeURIComponent(canonicalSlug)}/share-image`,
+      ogImageWidth: 1000,
+      ogImageHeight: 1250,
     });
   } catch (error) {
     console.error(`Product metadata failed for "${slug}":`, error);
