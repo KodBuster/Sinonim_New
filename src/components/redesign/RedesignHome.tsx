@@ -25,28 +25,6 @@ import {
 } from "./data";
 import { ProductCard } from "./ProductCard";
 
-function useRedesignStyles() {
-  useEffect(() => {
-    const id = "synonym-redesign-css";
-    let link = document.getElementById(id) as HTMLLinkElement | null;
-    const created = !link;
-    if (!link) {
-      link = document.createElement("link");
-      link.id = id;
-      link.rel = "stylesheet";
-      document.head.appendChild(link);
-    }
-    link.href = "/redesign/site.css?v=mobile-video-swipe-1";
-    document.documentElement.classList.add("synonym-redesign-active");
-    document.body.classList.add("synonym-redesign-active");
-    return () => {
-      document.documentElement.classList.remove("synonym-redesign-active");
-      document.body.classList.remove("synonym-redesign-active");
-      if (created) link?.remove();
-    };
-  }, []);
-}
-
 function Picture({
   desktop,
   mobile,
@@ -104,15 +82,12 @@ const PLAYABLE_SOCIAL_INDICES = SOCIAL_VIDEOS.flatMap((video, index) => video ? 
 type SocialProduct = { name: string; image: string; price: number; href: string };
 
 export function RedesignHome({ socialProducts }: { socialProducts: Record<string, SocialProduct> }) {
-  useRedesignStyles();
-
   const [slide, setSlide] = useState(0);
   const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const featuredRail = useRef<HTMLDivElement>(null);
   const socialRail = useRef<HTMLDivElement>(null);
   const socialCenter = useRef<HTMLDivElement>(null);
   const socialVideos = useRef<(HTMLVideoElement | null)[]>([]);
-  const [loadSocialVideos, setLoadSocialVideos] = useState(false);
   const [liveSocialProducts, setLiveSocialProducts] = useState<Record<string, SocialProduct>>();
   const [activeSocialVideo, setActiveSocialVideo] = useState(3);
   const socialTouch = useRef<{ x: number; y: number } | null>(null);
@@ -126,7 +101,6 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
     const observer = new IntersectionObserver(([entry]) => {
       if (!entry.isIntersecting) return;
       observer.disconnect();
-      setLoadSocialVideos(true);
       fetch("/api/home-social-products", { signal: controller.signal })
         .then(async (response) => {
           if (response.ok) setLiveSocialProducts(await response.json());
@@ -494,10 +468,10 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                       <>
                         <video
                           ref={(element) => { socialVideos.current[i] = element; }}
-                          src={loadSocialVideos ? video.src : undefined}
+                          src={video.src}
                           className="block h-full w-full object-cover"
-                          autoPlay={i === 3 && activeSocialVideo === 3}
-                          preload="none"
+                          autoPlay={i === 3}
+                          preload={i === 3 ? "auto" : "metadata"}
                           muted
                           loop
                           playsInline
