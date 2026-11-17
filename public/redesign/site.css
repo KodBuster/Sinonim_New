@@ -705,8 +705,33 @@ body.synonym-redesign-active [data-messenger-fab] {
   overflow: hidden;
   aspect-ratio: 300 / 388;
   border-radius: 10px;
-  background: #f5f2ec;
+  background: #ebe6dc;
   transition: aspect-ratio 450ms ease;
+}
+.social-section .social-card-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #ebe6dc;
+}
+.social-section .social-card-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.social-section .social-card-hit:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
+/* Счётчик 01 / 03 в hero больше не используем */
+.synonym-redesign-root .hero-pagination {
+  display: none !important;
 }
 
 .social-section .social-card.center {
@@ -716,6 +741,10 @@ body.synonym-redesign-active [data-messenger-fab] {
 
 .social-section .social-card.center .social-card-media {
   aspect-ratio: 3 / 5;
+}
+/* Прыжок через шов цикла: без анимации высоты, иначе клон «расширяется» скачком */
+.social-section .social-rail.social-rail--instant .social-card-media {
+  transition: none !important;
 }
 
 .social-product, .social-product-spacer {
@@ -757,9 +786,6 @@ body.synonym-redesign-active [data-messenger-fab] {
   .social-section .social-rail {
     --social-card-width: min(300px, 68cqw);
     --social-rail-padding: 10px;
-    overflow-x: hidden;
-    scroll-snap-type: none;
-    touch-action: pan-y pinch-zoom;
   }
 }
 
@@ -804,4 +830,93 @@ body.synonym-redesign-active [data-messenger-fab] {
 @media (max-width: 680px) {
   .store-benefits > a { min-height: 110px; gap: 8px; padding-inline: 6px; }
   .store-benefits svg { width: 32px; height: 32px; }
+}
+
+/* Навигация каруселей: линия + точка (без квадратов) */
+.synonym-redesign-root .nav-line-icon {
+  width: 28px;
+  height: 12px;
+  display: block;
+}
+.synonym-redesign-root .hero-controls {
+  gap: 14px;
+}
+.synonym-redesign-root .hero-controls > button {
+  width: auto;
+  height: auto;
+  min-width: 44px;
+  min-height: 36px;
+  padding: 8px 4px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 0;
+  line-height: 1;
+}
+.synonym-redesign-root .hero-controls > button:hover {
+  background: transparent;
+  opacity: 0.72;
+}
+.synonym-redesign-root .hero-dots {
+  gap: 7px;
+}
+.synonym-redesign-root .hero-dots button {
+  width: 4px;
+  height: 4px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+  padding: 0;
+}
+.synonym-redesign-root .hero-dots button.active {
+  width: 18px;
+  height: 1.5px;
+  border-radius: 0;
+  background: #fff;
+}
+.synonym-redesign-root .featured-arrows button,
+.synonym-redesign-root .scroll-actions button {
+  width: auto;
+  height: auto;
+  min-width: 40px;
+  min-height: 36px;
+  padding: 8px 6px;
+  border: 0;
+  background: transparent;
+  color: var(--olive);
+  font-size: 0;
+  line-height: 1;
+}
+.synonym-redesign-root .featured-arrows button:hover:not(:disabled),
+.synonym-redesign-root .scroll-actions button:hover {
+  background: transparent;
+  opacity: 0.65;
+}
+.synonym-redesign-root .featured-arrows button:disabled {
+  opacity: 0.28;
+}
+.synonym-redesign-root .scroll-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
+@media (max-width: 680px) {
+  /* На мобилке свайп достаточен — стрелки скрываем, точки/вёрстка остаются */
+  .synonym-redesign-root .hero-controls > button {
+    display: none;
+  }
+  .synonym-redesign-root .hero-controls {
+    gap: 0;
+    pointer-events: none;
+  }
+  .synonym-redesign-root .hero-dots {
+    pointer-events: auto;
+  }
+  .synonym-redesign-root .featured-arrows {
+    display: none;
+  }
+  .synonym-redesign-root .scroll-actions {
+    display: none;
+  }
 }

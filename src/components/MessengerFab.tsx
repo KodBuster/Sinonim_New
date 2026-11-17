@@ -104,17 +104,35 @@ function IconPhone() {
   );
 }
 
+/** Сколько мс бездействия, прежде чем FAB уезжает обратно за край */
+const FAB_IDLE_MS = 1000;
+
+function isTouchUi() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+}
+
 /**
  * Expandable messenger FAB — same interaction model as Шародувы FabContacts:
  * real <button> toggle, channel items are native <a href>, closed items
  * use pointer-events:none. Mango stays off on mobile so it cannot steal taps.
+ *
+ * В покое кнопка на ~2/3 за правым краем (виден только кусочек).
+ * Десктоп: выезд по наведению. Мобилка: первый тап — выезд, дальше работа.
+ * После бездействия — плавный уезд обратно (пока меню закрыто).
  */
 export function MessengerFab() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const fabRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const justToggled = useRef(false);
+  const idleTimer = useRef<number | null>(null);
+  /** Только настоящий hover мышью; на таче не используем — иначе mouseenter «залипает» */
+  const hovering = useRef(false);
+  const revealedRef = useRef(false);
+  const openRef = useRef(false);
 
   const applyFab = useCallback((isOpen: boolean) => {
     const items = itemRefs.current.filter(Boolean) as HTMLAnchorElement[];
@@ -131,9 +149,51 @@ export function MessengerFab() {
     });
   }, []);
 
+  const clearIdle = useCallback(() => {
+    if (idleTimer.current != null) {
+      window.clearTimeout(idleTimer.current);
+      idleTimer.current = null;
+    }
+  }, []);
+
+  const schedulePeek = useCallback(() => {
+    clearIdle();
+    idleTimer.current = window.setTimeout(() => {
+      // На таче hovering игнорируем: синтетический mouseenter часто не даёт mouseleave
+      if (openRef.current) return;
+      if (!isTouchUi() && hovering.current) return;
+      revealedRef.current = false;
+      setRevealed(false);
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && fabRef.current?.contains(active)) {
+        active.blur();
+      }
+    }, FAB_IDLE_MS);
+  }, [clearIdle]);
+
+  const reveal = useCallback(
+    (opts?: { keepIdle?: boolean }) => {
+      revealedRef.current = true;
+      setRevealed(true);
+      if (!opts?.keepIdle) clearIdle();
+    },
+    [clearIdle],
+  );
+
   useEffect(() => {
+    openRef.current = open;
     applyFab(open);
-  }, [open, applyFab]);
+    if (open) {
+      reveal();
+    } else {
+      // Меню закрыли — всегда ставим таймер уезда (и на таче тоже)
+      schedulePeek();
+    }
+  }, [open, applyFab, reveal, schedulePeek]);
+
+  useEffect(() => {
+    revealedRef.current = revealed;
+  }, [revealed]);
 
   useEffect(() => {
     const handleOpenRequest = (_event: Event) => {
@@ -141,23 +201,29 @@ export function MessengerFab() {
       window.setTimeout(() => {
         justToggled.current = false;
       }, 0);
+      reveal();
       setOpen(true);
     };
     window.addEventListener(MESSENGER_FAB_OPEN_EVENT, handleOpenRequest);
     return () =>
       window.removeEventListener(MESSENGER_FAB_OPEN_EVENT, handleOpenRequest);
-  }, []);
+  }, [reveal]);
 
   useEffect(() => {
-    const onDocClick = (event: MouseEvent) => {
+    const onDocPointer = (event: Event) => {
       if (justToggled.current) return;
-      if (!open) return;
-      if (fabRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
+      const target = event.target as Node | null;
+      if (fabRef.current?.contains(target)) return;
+      if (openRef.current) {
+        setOpen(false);
+        return;
+      }
+      // Тап/клик вне FAB при выезде — перезапускаем уезд
+      if (revealedRef.current) schedulePeek();
     };
-    document.addEventListener("click", onDocClick);
-    return () => document.removeEventListener("click", onDocClick);
-  }, [open]);
+    document.addEventListener("pointerdown", onDocPointer);
+    return () => document.removeEventListener("pointerdown", onDocPointer);
+  }, [schedulePeek]);
 
   useEffect(() => {
     if (!open) return;
@@ -168,6 +234,8 @@ export function MessengerFab() {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  useEffect(() => () => clearIdle(), [clearIdle]);
+
   if (pathname === "/messengers") return null;
 
   const toggle = (event: React.MouseEvent) => {
@@ -176,7 +244,27 @@ export function MessengerFab() {
     window.setTimeout(() => {
       justToggled.current = false;
     }, 0);
+
+    // На тач-устройствах первый тап только выезжает кнопку из-за края
+    if (isTouchUi() && !revealedRef.current && !openRef.current) {
+      reveal();
+      schedulePeek();
+      return;
+    }
+
     setOpen((value) => !value);
+  };
+
+  const onMouseEnter = () => {
+    if (isTouchUi()) return;
+    hovering.current = true;
+    reveal();
+  };
+
+  const onMouseLeave = () => {
+    if (isTouchUi()) return;
+    hovering.current = false;
+    if (!openRef.current) schedulePeek();
   };
 
   return (
@@ -189,7 +277,9 @@ export function MessengerFab() {
       <div
         ref={fabRef}
         id="messenger-fab-root"
-        className={`messenger-fab${open ? " open" : ""}`}
+        className={`messenger-fab${open ? " open" : ""}${revealed || open ? " is-revealed" : " is-peek"}`}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
       >
         {FAB_ITEMS.map((item, index) => (
           <a

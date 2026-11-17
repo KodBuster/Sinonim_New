@@ -331,18 +331,28 @@ body.mango-chat-open .messenger-fab {
 }
 .messenger-fab {
   position: fixed;
-  right: 1.25rem;
+  right: 0;
   /* Above inspired-video product CTA / buy button */
   bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
   z-index: 120;
   width: 56px;
   height: 56px;
+  /* В покое ~2/3 за краем — виден только кусочек */
+  --fab-peek-x: 66.666%;
+  --fab-out-x: -1.25rem;
+  transform: translate3d(var(--fab-peek-x), 0, 0);
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 @media (min-width: 768px) {
   .messenger-fab {
-    right: 1.5rem;
     bottom: calc(6.75rem + env(safe-area-inset-bottom, 0px));
+    --fab-out-x: -1.5rem;
   }
+}
+.messenger-fab.is-revealed,
+.messenger-fab.open {
+  transform: translate3d(var(--fab-out-x), 0, 0);
 }
 .messenger-fab-main {
   position: relative;
@@ -359,11 +369,17 @@ body.mango-chat-open .messenger-fab {
   place-items: center;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.25s ease, background 0.2s ease;
+  transition: transform 0.25s ease, background 0.2s ease, box-shadow 0.35s ease;
+}
+.messenger-fab.is-peek .messenger-fab-main {
+  box-shadow: 0 8px 18px -12px rgba(212, 119, 80, 0.4);
 }
 .messenger-fab-main:hover {
   background: var(--color-brand-terracotta-logo, #c96a4a);
   transform: scale(1.05);
+}
+.messenger-fab.is-peek .messenger-fab-main:hover {
+  transform: none;
 }
 .messenger-fab-main:active {
   transform: scale(0.96);
