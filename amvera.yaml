@@ -8,11 +8,11 @@ meta:
     version: "24"
 
 build:
-  additionalCommands: npm ci --include=dev && npm run build
+  additionalCommands: npm ci --include=dev && npm run build:amvera
   artifacts:
-    ".next/standalone": /.next
-    "scripts/start-server.mjs": /scripts
-    "certs": /
+    "build": /
+    "scripts": /
+    "package.json": /
 
 run:
   command: node scripts/start-server.mjs --amvera

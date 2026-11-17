@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/prepare-standalone.mjs",
+    "build:amvera": "next build && node scripts/prepare-standalone.mjs --amvera",
     "start": "node scripts/start-server.mjs",
     "lint": "eslint",
     "sync:1c": "node scripts/sync-ftp-to-advantshop.mjs",
