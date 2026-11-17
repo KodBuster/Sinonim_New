@@ -1,4 +1,5 @@
 import { RedesignHome } from "@/components/redesign/RedesignHome";
+import { connection } from "next/server";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildHomeJsonLd } from "@/lib/home-schema";
@@ -33,6 +34,7 @@ const socialProductsBySlug = [
 ];
 
 export default async function HomePage() {
+  await connection();
   const results = await Promise.allSettled(
     socialProductsBySlug.map(({ slug }) => getProductDetails(slug)),
   );

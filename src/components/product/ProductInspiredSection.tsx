@@ -7,14 +7,10 @@ import { formatPrice, type ProductDetails } from "@/lib/products";
 import { InspiredProductView } from "./InspiredProductView";
 import { useProductSelection } from "./ProductSelectionContext";
 
-/** Temporary Missoma PDP placeholders — replace with own videos later. */
-const PLACEHOLDER_VIDEOS = [
-  "https://cdn.shopify.com/videos/c/vp/4db180d519c54474b97b4a1e0adf8fcd/4db180d519c54474b97b4a1e0adf8fcd.SD-480p-1.5Mbps-90104591.mp4",
-  "https://cdn.shopify.com/videos/c/vp/ee2ec5f074ee4d14be5e99e1eea79ee4/ee2ec5f074ee4d14be5e99e1eea79ee4.SD-480p-1.5Mbps-96026792.mp4",
-  "https://cdn.shopify.com/videos/c/vp/3f16b74a96c1430ab10ca4de2eae7108/3f16b74a96c1430ab10ca4de2eae7108.SD-480p-1.5Mbps-86259426.mp4",
-  "https://cdn.shopify.com/videos/c/vp/b0778c3b3f1e4ff59e44fee54a4e87a5/b0778c3b3f1e4ff59e44fee54a4e87a5.SD-480p-1.5Mbps-88101771.mp4",
-  "https://cdn.shopify.com/videos/c/vp/df48c8846afa438c8528c3b79ccecd80/df48c8846afa438c8528c3b79ccecd80.SD-480p-1.5Mbps-96026916.mp4",
-  "https://cdn.shopify.com/videos/c/vp/94930e95e05642349e5966520c0227e7/94930e95e05642349e5966520c0227e7.SD-480p-1.5Mbps-90102050.mp4",
+const INSPIRATION_VIDEOS = [
+  "/images/braslet_video_3.mp4",
+  "/images/braslet_video_6.mp4",
+  "/images/braslet_video_7.mp4",
 ] as const;
 
 const PRODUCT_CARD_DELAY_MS = 1000;
@@ -517,7 +513,7 @@ export function ProductInspiredSection({
           ref={scrollerRef}
           className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
-          {PLACEHOLDER_VIDEOS.map((src, index) => (
+          {INSPIRATION_VIDEOS.map((src, index) => (
             <button
               key={src}
               type="button"
@@ -579,7 +575,7 @@ export function ProductInspiredSection({
 
       {mounted && activeIndex != null ? (
         <InspiredVideoModal
-          videos={PLACEHOLDER_VIDEOS}
+          videos={INSPIRATION_VIDEOS}
           startIndex={activeIndex}
           product={cardProduct}
           onClose={() => setActiveIndex(null)}

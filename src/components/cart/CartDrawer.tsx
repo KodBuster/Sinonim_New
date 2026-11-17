@@ -4,10 +4,24 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { ProductImage } from "@/components/catalog/ProductImage";
-import { formatPrice, type Product, type ProductDetails } from "@/lib/products";
+import { formatPrice, getProductSizePrice, type Product, type ProductDetails } from "@/lib/products";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/checkout";
-import { formatCaratWeight } from "@/lib/product-weight";
+import { getProductCaratWeight } from "@/lib/product-weight";
+import { formatInsertMassLabel } from "@/lib/synthetic-diamond-labels";
 import styles from "./CartDrawer.module.css";
+
+function isAvailableSize(product: ProductDetails, size: string) {
+  const amount = product.sizeStockAmounts?.[size];
+  return product.sizeOptions.some((option) => option.value === size)
+    && (amount === undefined || amount > 0);
+}
+
+async function loadRecommendationDetails(slug: string): Promise<ProductDetails | undefined> {
+  const response = await fetch(`/api/products/${encodeURIComponent(slug)}`);
+  if (!response.ok) throw new Error();
+  const { product } = await response.json() as { product?: ProductDetails };
+  return product;
+}
 
 export function CartDrawer() {
   const { items, count, total, isOpen, closeCart, addItem, removeItem, updateQuantity } = useCart();
@@ -15,6 +29,7 @@ export function CartDrawer() {
   const [products, setProducts] = useState<Product[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [selection, setSelection] = useState<{ slug: string; details?: ProductDetails; size: string } | null>(null);
 
   useEffect(() => {
     const element = dialog.current;
@@ -40,22 +55,59 @@ export function CartDrawer() {
     return () => controller.abort();
   }, [isOpen]);
 
-  async function addRecommendation(product: Product) {
+  async function addRecommendation(product: Product, size = "") {
+    if (!size && selection?.slug !== product.slug && product.availableSizeOptions?.length) {
+      setError("");
+      setSelection({ slug: product.slug, size: "" });
+      void loadRecommendationDetails(product.slug).then((details) => {
+        if (!details?.sizeOptions.length) return;
+        setSelection((current) => {
+          if (current?.slug !== product.slug || current.details) return current;
+          const size = isAvailableSize(details, current.size) ? current.size : "";
+          return { ...current, details, size };
+        });
+      }).catch(() => {
+        // Keep the catalog sizes visible and recheck the chosen size on add.
+      });
+      return;
+    }
+
     setBusy(product.slug);
     setError("");
     try {
-      const response = await fetch(`/api/products/${encodeURIComponent(product.slug)}`);
-      if (!response.ok) throw new Error();
-      const { product: fresh } = await response.json() as { product: ProductDetails };
-      if (!fresh || fresh.inStock === false || fresh.sizeOptions.length > 0) {
-        setError("Откройте украшение, чтобы проверить наличие и выбрать размер.");
+      const loaded = selection?.slug === product.slug ? selection.details : undefined;
+      const fresh = loaded ?? await loadRecommendationDetails(product.slug);
+      if (!dialog.current?.open) return;
+      if (!fresh || fresh.inStock === false) {
+        setError("Этого украшения сейчас нет в наличии.");
         return;
       }
-      addItem({ productSlug: fresh.slug, name: fresh.name, image: fresh.image,
-        price: fresh.price, stoneWeight: fresh.stoneWeight,
-        stoneLabel: `${formatCaratWeight(fresh.stoneWeight)} карат`, size: null, artNo: fresh.artNo });
+      if (fresh.sizeOptions.length > 0 && !isAvailableSize(fresh, size)) {
+        setSelection({ slug: product.slug, details: fresh, size: "" });
+        if (size) setError("Выбранный размер закончился. Выберите другой.");
+        return;
+      }
+      if (size && fresh.sizeOptions.length === 0) {
+        setError("Не удалось подтвердить выбранный размер. Попробуйте ещё раз.");
+        return;
+      }
+      const selectedSize = fresh.sizeOptions.length > 0 ? size : null;
+      const stoneWeight = getProductCaratWeight(fresh, selectedSize);
+      addItem({
+        productSlug: fresh.slug,
+        name: fresh.name,
+        image: fresh.image,
+        price: getProductSizePrice(fresh, selectedSize),
+        stoneWeight,
+        stoneLabel: formatInsertMassLabel(stoneWeight),
+        size: selectedSize,
+        artNo: (selectedSize ? fresh.sizeArtNos?.[selectedSize] : undefined) ?? fresh.artNo,
+      });
+      setSelection(null);
     } catch {
-      setError("Не удалось добавить украшение. Попробуйте ещё раз.");
+      setError(size
+        ? "Не удалось проверить выбранный размер. Попробуйте ещё раз."
+        : "Не удалось загрузить данные украшения. Попробуйте ещё раз.");
     } finally {
       setBusy(null);
     }
@@ -126,16 +178,41 @@ export function CartDrawer() {
           <h2>Дополните образ</h2>
           {error && <p role="alert" className={styles.error}>{error}</p>}
           <div className={styles.recommendationList}>
-            {recommendations.map((product) => <article key={product.slug} className={styles.recommendation}>
-              <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.recommendationImage}>
-                <ProductImage src={product.image} alt={product.name} fill sizes="160px" className={styles.photo} />
-              </Link>
-              <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.name}>{product.name}</Link>
-              <p>{formatPrice(product.price)}</p>
-              {(product.sizeOptions?.length || product.category === "rings" || product.category === "bracelets") ?
-                <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.add}>Выбрать размер</Link> :
-                <button type="button" className={styles.add} disabled={busy !== null} onClick={() => void addRecommendation(product)}>{busy === product.slug ? "Добавляем…" : "В корзину"}</button>}
-            </article>)}
+            {recommendations.map((product) => {
+              const active = selection?.slug === product.slug ? selection : null;
+              const details = active?.details;
+              const available = details
+                ? details.sizeOptions.filter((option) => isAvailableSize(details, option.value))
+                : product.availableSizeOptions ?? [];
+              const needsSize = Boolean(product.sizeOptions?.length) || product.category === "rings" || product.category === "bracelets";
+              return <article key={product.slug} className={styles.recommendation}>
+                <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.recommendationImage}>
+                  <ProductImage src={product.image} alt={product.name} fill sizes="160px" className={styles.photo} />
+                </Link>
+                <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.name}>{product.name}</Link>
+                <p>{formatPrice(details ? getProductSizePrice(details, active?.size) : product.price)}</p>
+                {active && (available.length > 0 ? (
+                  <select
+                    className={styles.sizeSelect}
+                    aria-label={`Размер: ${product.name}`}
+                    value={active.size}
+                    disabled={busy !== null}
+                    onChange={(event) => setSelection({ ...active, size: event.target.value })}
+                  >
+                    <option value="">Выберите размер</option>
+                    {available.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                ) : <p>Нет размеров в наличии</p>)}
+                <button
+                  type="button"
+                  className={styles.add}
+                  disabled={busy !== null || (active !== null && !active.size)}
+                  onClick={() => void addRecommendation(product, active?.size)}
+                >
+                  {busy === product.slug ? "Проверяем…" : needsSize && !active ? "Выбрать размер" : "В корзину"}
+                </button>
+              </article>;
+            })}
           </div>
         </aside>}
       </div>

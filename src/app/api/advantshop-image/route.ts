@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
 import { isAllowedAdvantShopImageUrl } from "@/lib/advantshop/images";
 
+function getMiddleImage(src: string): string | undefined {
+  const url = new URL(src);
+  const path = url.pathname.replace(
+    /^(\/pictures\/product\/)big\/([^/]+)_big(\.[^/.]+)$/i,
+    "$1middle/$2_middle$3",
+  );
+  if (path === url.pathname) return;
+  url.pathname = path;
+  return url.toString();
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const src = searchParams.get("src");
@@ -18,41 +29,32 @@ export async function GET(request: Request) {
     headers.Cookie = storeCookie;
   }
 
-  try {
-    const response = await fetch(src, {
-      headers,
-      next: { revalidate: 86400 },
-    });
+  const middle = getMiddleImage(src);
+  for (const candidate of middle ? [src, middle] : [src]) {
+    try {
+      const response = await fetch(candidate, {
+        headers,
+        next: { revalidate: 86400 },
+      });
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!response.ok || !contentType.startsWith("image/")) {
+        await response.body?.cancel();
+        continue;
+      }
+      const buffer = await response.arrayBuffer();
+      if (buffer.byteLength < 128) continue;
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const buffer = await response.arrayBuffer();
-
-    if (
-      !response.ok ||
-      !contentType.startsWith("image/") ||
-      buffer.byteLength < 128
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Изображение недоступно. Откройте витрину AdvantShop для публичного доступа или задайте ADVANTSHOP_STORE_COOKIE.",
+      return new NextResponse(buffer, {
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": candidate === src
+            ? "public, max-age=2592000, stale-while-revalidate=31536000"
+            : "public, max-age=300",
         },
-        { status: 502 }
-      );
+      });
+    } catch {
+      // Try the same photo at a smaller size if the original cannot be fetched.
     }
-
-    return new NextResponse(buffer, {
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control":
-          "public, max-age=2592000, stale-while-revalidate=31536000",
-      },
-    });
-  } catch (error) {
-    console.error("AdvantShop image proxy error:", error);
-    return NextResponse.json(
-      { error: "Не удалось загрузить изображение" },
-      { status: 502 }
-    );
   }
+  return NextResponse.json({ error: "Не удалось загрузить изображение" }, { status: 502 });
 }

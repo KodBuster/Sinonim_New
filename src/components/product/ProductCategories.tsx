@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { COLLECTIONS } from "@/components/redesign/data";
 
+const PRODUCT_PAGE_CATEGORY_PHOTOS = {
+  rings: "/images/Кольца_2.png",
+  earrings: "/images/Серьги_2.png",
+  necklaces: "/images/Колье_2.png",
+  bracelets: "/images/Браслеты_2.png",
+} satisfies Record<(typeof COLLECTIONS)[number]["id"], string>;
+
 export function ProductCategories() {
   return (
     <section aria-label="Категории">
@@ -13,7 +20,7 @@ export function ProductCategories() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={category.photo}
+              src={PRODUCT_PAGE_CATEGORY_PHOTOS[category.id]}
               alt={category.name}
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
               loading="lazy"

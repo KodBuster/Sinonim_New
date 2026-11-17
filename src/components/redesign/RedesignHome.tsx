@@ -17,10 +17,8 @@ import {
   BESTSELLER_ORDER,
   COLLECTIONS,
   FEATURED_ORDER,
-  FEATURED_TABS,
   HERO_SLIDES,
   JOURNAL,
-  PRODUCTS,
   PROMOS,
   productsByIds,
 } from "./data";
@@ -106,7 +104,6 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
   useRedesignStyles();
 
   const [slide, setSlide] = useState(0);
-  const [featuredTab, setFeaturedTab] = useState<(typeof FEATURED_TABS)[number]["id"]>("all");
   const heroTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const featuredRail = useRef<HTMLDivElement>(null);
   const socialRail = useRef<HTMLDivElement>(null);
@@ -155,10 +152,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
     return () => observer.disconnect();
   }, []);
 
-  const featuredProducts = useMemo(() => {
-    if (featuredTab === "all") return productsByIds(FEATURED_ORDER);
-    return PRODUCTS.filter((p) => p.category === featuredTab);
-  }, [featuredTab]);
+  const featuredProducts = useMemo(() => productsByIds(FEATURED_ORDER), []);
 
   const bestsellers = useMemo(() => productsByIds(BESTSELLER_ORDER), []);
 
@@ -305,32 +299,11 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
         >
           <div className="featured-products-top">
             <div className="featured-products-intro">
-              <h2 id="featured-products-title">Товары СИНОНИМ</h2>
-              <p>
-                Украшения, которые становятся частью вашей истории. Подборка настоящих изделий из
-                каталога.
-              </p>
+              <h2 id="featured-products-title">Что сегодня выберите?</h2>
             </div>
           </div>
           <div className="featured-products-controls">
-            <div className="featured-tabs" role="tablist" aria-label="Товары по категориям">
-              {FEATURED_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  className={`featured-tab ${featuredTab === tab.id ? "active" : ""}`}
-                  aria-selected={featuredTab === tab.id}
-                  onClick={() => {
-                    setFeaturedTab(tab.id);
-                    if (featuredRail.current) featuredRail.current.scrollLeft = 0;
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-            <div className="featured-arrows">
+            <div className="featured-arrows ml-auto">
               <button
                 type="button"
                 aria-label="Предыдущие товары"
@@ -350,8 +323,6 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
           <div
             className="featured-products-viewport"
             id="featured-panel"
-            role="tabpanel"
-            aria-labelledby="featured-products-title"
           >
             <div
               className="cards-scroll featured-products-track"

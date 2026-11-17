@@ -210,7 +210,7 @@ export function ProductConfigurator({
                       setSelectedSize(size.value);
                       setSizeTouched(true);
                     }}
-                    className={`relative flex h-10 w-10 items-center justify-center rounded-full border text-sm transition-colors ${
+                    className={`relative flex h-10 min-w-10 items-center justify-center whitespace-nowrap rounded-full border px-2 text-sm transition-colors ${
                       isSelected
                         ? "border-brand-olive-dark bg-brand-olive-dark text-white"
                         : sizeAvailable

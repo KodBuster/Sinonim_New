@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { connection } from "next/server";
 import { getCatalogProducts } from "@/lib/products-service";
 import { BLOG_ARTICLES } from "@/lib/blog";
 import { CATALOG_CATEGORY_SLUGS } from "@/lib/products";
@@ -32,6 +33,7 @@ const STATIC_PAGES: { path: string; changeFrequency: MetadataRoute.Sitemap[numbe
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  await connection();
   const siteUrl = getSiteUrl();
   const now = new Date();
 

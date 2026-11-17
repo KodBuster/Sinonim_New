@@ -1,7 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-const COUNTER_DIR = path.join(process.cwd(), "data");
+const COUNTER_DIR = process.env.ORDER_DATA_DIR || path.join(process.cwd(), "data");
 const COUNTER_FILE = path.join(COUNTER_DIR, "order-counter.json");
 
 type CounterState = { next: number };

@@ -9,8 +9,12 @@ meta:
 
 build:
   additionalCommands: npm ci --include=dev && npm run build
+  artifacts:
+    ".next/standalone": /.next
+    "scripts/start-server.mjs": /scripts
+    "certs": /
 
 run:
-  command: node scripts/start-server.mjs
+  command: node scripts/start-server.mjs --amvera
   containerPort: 80
   persistenceMount: /data

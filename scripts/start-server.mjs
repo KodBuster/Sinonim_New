@@ -3,6 +3,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 
 const serverPath = ".next/standalone/server.js";
+const amvera = process.argv.includes("--amvera");
 const rootCa = resolve("certs/russian_trusted_root_ca.cer");
 const subCa = resolve("certs/russian_trusted_sub_ca.cer");
 const caBundle = resolve("certs/russian_trusted_ca_bundle.pem");
@@ -27,7 +28,7 @@ function runBuild() {
   });
 }
 
-if (!existsSync(serverPath)) {
+if (!amvera && !existsSync(serverPath)) {
   try {
     runBuild();
   } catch (error) {
@@ -45,6 +46,11 @@ if (!existsSync(serverPath)) {
 }
 
 const env = { ...process.env };
+if (amvera) {
+  env.PORT ||= "80";
+  env.HOSTNAME = "0.0.0.0";
+  env.ORDER_DATA_DIR = "/data";
+}
 
 // MAX platform-api2.max.ru подписан УЦ Минцифры — без CA Node fetch падает
 if (ensureCaBundle()) {
