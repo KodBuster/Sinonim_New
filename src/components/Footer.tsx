@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { MetrikaPhoneLink } from "@/components/analytics/MetrikaPhoneLink";
 import {
   SHOWROOM,
@@ -93,12 +94,35 @@ function SocialLinksBlock({ className = "" }: { className?: string }) {
   );
 }
 
+function FooterSection({ title, mobileTitle = title, children }: {
+  title: string;
+  mobileTitle?: string;
+  children: ReactNode;
+}) {
+  const label = "text-brand-terracotta text-xs tracking-[0.2em] uppercase";
+  return (
+    <div>
+      <div className="hidden md:block">
+        <h2 className={`${label} mb-4`}>{title}</h2>
+        {children}
+      </div>
+      <details className="group border-t border-brand-sand md:hidden">
+        <summary className={`${label} flex min-h-11 cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden`}>
+          {mobileTitle}
+          <span aria-hidden="true" className="size-2 rotate-45 border-r border-b border-current transition-transform group-open:rotate-225" />
+        </summary>
+        <div className="pb-4">{children}</div>
+      </details>
+    </div>
+  );
+}
+
 export function Footer() {
   return (
     <footer className="bg-[#f7f1e5] text-brand-text border-t border-brand-terracotta mt-auto">
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 py-6 md:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 gap-0 md:grid-cols-3 md:gap-10">
+          <div className="mb-5 md:mb-0 lg:col-span-1">
             <Link href="/" className="inline-block mb-4 shrink-0">
               <Image
                 src="/images/logo_20260527190756.png"
@@ -112,10 +136,7 @@ export function Footer() {
             <SocialLinksBlock className="max-w-xs" />
           </div>
 
-          <div>
-            <h4 className="text-brand-terracotta text-xs tracking-[0.2em] uppercase mb-4">
-              Покупателям
-            </h4>
+          <FooterSection title="Покупателям">
             <ul className="space-y-2.5">
               {FOOTER_LINKS.info.map((link) => (
                 <li key={link.href}>
@@ -128,12 +149,9 @@ export function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </FooterSection>
 
-          <div>
-            <h4 className="text-brand-terracotta text-xs tracking-[0.2em] uppercase mb-4">
-              Контакты
-            </h4>
+          <FooterSection title="Контакты" mobileTitle="О нас">
             <p className="text-sm text-brand-text mb-2">Шоурум в Москве</p>
             <p className="text-sm text-brand-muted mb-3 leading-relaxed">
               {SHOWROOM.address}
@@ -161,7 +179,7 @@ export function Footer() {
               ОГРН 1187746428484
             </p>
 
-          </div>
+          </FooterSection>
         </div>
 
         <div className="border-t border-brand-sand mt-10 pt-6 flex flex-col sm:flex-row justify-between gap-4 text-xs text-brand-muted">

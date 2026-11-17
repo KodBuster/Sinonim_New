@@ -110,12 +110,33 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
   const socialCenter = useRef<HTMLDivElement>(null);
   const socialVideos = useRef<(HTMLVideoElement | null)[]>([]);
   const [activeSocialVideo, setActiveSocialVideo] = useState(3);
+  const socialTouch = useRef<{ x: number; y: number } | null>(null);
+  const socialSwipe = useRef<-1 | 0 | 1>(0);
+  const socialScrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchX = useRef(0);
+
+  function settleSocialSwipe() {
+    if (!socialSwipe.current || socialTouch.current) return;
+    if (socialScrollTimer.current) clearTimeout(socialScrollTimer.current);
+    socialScrollTimer.current = setTimeout(() => {
+      const direction = socialSwipe.current;
+      if (!direction || socialTouch.current) return;
+      socialSwipe.current = 0;
+      const playable = SOCIAL_VIDEOS.flatMap((video, index) => video ? [index] : []);
+      const next = playable[playable.indexOf(activeSocialVideo) + direction];
+      if (next !== undefined) selectSocialVideo(next);
+    }, 160);
+  }
+
+  useEffect(() => () => {
+    if (socialScrollTimer.current) clearTimeout(socialScrollTimer.current);
+  }, []);
 
   function selectSocialVideo(index: number) {
     const rail = socialRail.current;
     const video = socialVideos.current[index];
     if (!rail || !video) return;
+    socialSwipe.current = 0;
 
     if (index === activeSocialVideo) {
       if (video.paused) void video.play().catch(() => {});
@@ -421,7 +442,29 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
 
         <section className="social-section wrap" data-home-block="6">
           <SectionHead title="Украшения в движении" />
-          <div ref={socialRail} className="social-rail" id="social-rail">
+          <div
+            ref={socialRail}
+            className="social-rail"
+            id="social-rail"
+            onScroll={settleSocialSwipe}
+            onTouchStart={(event) => {
+              if (!window.matchMedia("(max-width: 680px)").matches) return;
+              const touch = event.touches[0];
+              socialSwipe.current = 0;
+              socialTouch.current = { x: touch.clientX, y: touch.clientY };
+            }}
+            onTouchEnd={(event) => {
+              const start = socialTouch.current;
+              socialTouch.current = null;
+              if (!start) return;
+              const touch = event.changedTouches[0];
+              const x = start.x - touch.clientX;
+              const y = Math.abs(touch.clientY - start.y);
+              socialSwipe.current = Math.abs(x) > Math.max(24, y) ? (x > 0 ? 1 : -1) : 0;
+              settleSocialSwipe();
+            }}
+            onTouchCancel={() => { socialTouch.current = null; }}
+          >
             {SOCIAL_VIDEOS.map((video, i) => {
               const product = video ? socialProducts[video.article] : undefined;
               return (
