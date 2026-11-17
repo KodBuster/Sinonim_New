@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: RedesignProduct }) {
             className="product-image from-catalog"
             src={product.image}
             alt={product.name}
-            loading="eager"
+            loading="lazy"
           />
         </Link>
         <button

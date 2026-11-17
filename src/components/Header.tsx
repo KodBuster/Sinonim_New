@@ -87,7 +87,7 @@ export function Header({ overlay = false }: HeaderProps) {
 
           <Link
             href="/"
-            className="mr-8 shrink-0 md:mr-10 lg:mr-14 xl:mr-16"
+            className="mr-1 min-w-0 md:mr-10 md:shrink-0 lg:mr-14 xl:mr-16"
             aria-label="СИНОНИМ — главная"
           >
             <Image
@@ -96,7 +96,7 @@ export function Header({ overlay = false }: HeaderProps) {
               width={380}
               height={64}
               priority
-              className="h-8 w-auto max-w-[190px] object-contain sm:h-9 md:h-10"
+              className="h-8 w-auto max-w-full object-contain sm:h-9 sm:max-w-[190px] md:h-10"
             />
           </Link>
 

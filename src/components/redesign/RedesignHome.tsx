@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { formatPrice } from "@/lib/products";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/checkout";
@@ -52,18 +53,19 @@ function Picture({
   desktop,
   mobile,
   alt,
+  priority = false,
   className = "",
 }: {
   desktop: string;
   mobile: string;
   alt: string;
+  priority?: boolean;
   className?: string;
 }) {
   return (
     <picture className={className}>
       <source media="(max-width:680px)" srcSet={mobile} />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={desktop} alt={alt} loading="eager" />
+      <img src={desktop} alt={alt} loading={priority ? "eager" : "lazy"} fetchPriority={priority ? "high" : "low"} />
     </picture>
   );
 }
@@ -181,11 +183,34 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
   /** Абсолютный индекс карточки в центре — только ref, класс .center пишем в DOM */
   const activeSocialAbs = useRef(SOCIAL_SEED_INDEX);
   const activeSocialBase = useRef(SOCIAL_SEED_INDEX % SOCIAL_BASE_LEN);
+  const [loadSocialVideos, setLoadSocialVideos] = useState(false);
+  const [liveSocialProducts, setLiveSocialProducts] = useState<Record<string, SocialProduct>>();
   const touchX = useRef(0);
   const socialJumping = useRef(false);
   const socialSettleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Ручная пауза на активном ролике — settle не должен снова жать play */
   const socialUserPaused = useRef(false);
+
+  useEffect(() => {
+    const rail = socialRail.current;
+    if (!rail) return;
+    const controller = new AbortController();
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      observer.disconnect();
+      setLoadSocialVideos(true);
+      fetch("/api/home-social-products", { signal: controller.signal })
+        .then(async (response) => {
+          if (response.ok) setLiveSocialProducts(await response.json());
+        })
+        .catch(() => {});
+    }, { rootMargin: "200px" });
+    observer.observe(rail);
+    return () => {
+      observer.disconnect();
+      controller.abort();
+    };
+  }, []);
 
   function socialCards(): HTMLElement[] {
     const rail = socialRail.current;
@@ -424,22 +449,11 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Прогрев буфера + первый кадр у всех копий (без pause активного)
   useEffect(() => {
-    const warm = window.setTimeout(() => {
-      socialVideos.current.forEach((video, i) => {
-        if (!video) return;
-        try {
-          if (video.readyState < 2) video.load();
-          if (i === activeSocialAbs.current && !video.paused) return;
-          paintFirstFrame(video);
-        } catch {
-          /* ignore */
-        }
-      });
-    }, 50);
-    return () => window.clearTimeout(warm);
-  }, []);
+    if (!loadSocialVideos) return;
+    playSocialAt(activeSocialAbs.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- логика на refs
+  }, [loadSocialVideos]);
 
   useEffect(() => {
     const rail = socialRail.current;
@@ -557,6 +571,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   desktop={s.desktop}
                   mobile={s.mobile}
                   alt="Редакционная фотография SYNONYM"
+                  priority={i === 0}
                   className="hero-photo"
                 />
                 <div className="hero-shade" />
@@ -684,8 +699,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
         <section className="categories wrap" data-home-block="3" aria-label="Категории">
           {COLLECTIONS.map((c) => (
             <Link key={c.id} href={c.href} className="category-tile">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={c.photo} alt="" loading="lazy" />
+              <Image src={c.photo} alt="" fill sizes="(max-width: 960px) 50vw, 25vw" />
               <span className="category-tile-copy">
                 <span className="category-tile-slogan">{c.slogan}</span>
                 <span className="category-tile-name">{c.name}</span>
@@ -766,7 +780,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
           <div ref={socialRail} className="social-rail" id="social-rail">
             {SOCIAL_SLIDES.map((slideItem) => {
               const { video, baseIndex, key, index: i } = slideItem;
-              const product = video ? socialProducts[video.article] : undefined;
+              const product = video ? (liveSocialProducts?.[video.article] ?? socialProducts[video.article]) : undefined;
               const isCenterSeed = i === SOCIAL_SEED_INDEX;
               return (
                 <div
@@ -784,7 +798,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                             socialVideos.current[i] = element;
                             if (element) paintFirstFrame(element);
                           }}
-                          src={video.src}
+                          src={loadSocialVideos ? video.src : undefined}
                           className="social-card-video"
                           preload="auto"
                           muted
@@ -872,7 +886,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <Link key={b.title} className="journal-card" href={b.href}>
                 <div className="journal-photo">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={b.image} alt={b.title} loading="eager" />
+                  <img src={b.image} alt={b.title} loading="lazy" />
                 </div>
                 <span className="eyebrow">{b.tag}</span>
                 <h3>{b.title}</h3>

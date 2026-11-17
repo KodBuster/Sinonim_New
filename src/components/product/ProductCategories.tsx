@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { COLLECTIONS } from "@/components/redesign/data";
 
 const PRODUCT_PAGE_CATEGORY_PHOTOS = {
@@ -18,10 +19,11 @@ export function ProductCategories() {
             href={category.href}
             className="group relative block aspect-[2/3] overflow-hidden bg-white"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={PRODUCT_PAGE_CATEGORY_PHOTOS[category.id]}
-              alt={category.name}
+              alt=""
+              fill
+              sizes="(max-width: 767px) 50vw, 25vw"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.045]"
               loading="lazy"
             />

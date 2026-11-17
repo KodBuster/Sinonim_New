@@ -19,9 +19,21 @@ import { ProductSelectionProvider } from "./ProductSelectionContext";
 
 type ProductPageProps = {
   product: ProductDetails;
-  relatedProducts: Product[];
-  complectProducts: Product[];
+  relatedProducts: Promise<Product[]>;
+  complectProducts: Promise<Product[]>;
 };
+
+async function RelatedProducts({ products }: { products: Promise<Product[]> }) {
+  const related = await products;
+  return related.length > 0 ? (
+    <div className="mt-5"><ProductRecommendations products={related} /></div>
+  ) : null;
+}
+
+async function ComplectProducts({ products }: { products: Promise<Product[]> }) {
+  const complect = await products;
+  return complect.length > 0 ? <ProductComplectSection products={complect} /> : null;
+}
 
 function productTagline(product: ProductDetails) {
   switch (product.category) {
@@ -43,7 +55,6 @@ export function ProductPage({
   relatedProducts,
   complectProducts,
 }: ProductPageProps) {
-  const related = relatedProducts;
   const categoryTitle = CATEGORIES[product.category].title;
   const insertMass = getInsertMassDisplayLabel(product) ?? "";
   const videoUrl =
@@ -110,7 +121,7 @@ export function ProductPage({
                 ) : null}
 
                 <div className="mb-2 flex items-start justify-between gap-4">
-                  <h1 className="font-heading text-[1.75rem] leading-[1.15] text-brand-olive-dark md:text-[2.15rem]">
+                  <h1 className="min-w-0 font-heading text-[1.75rem] leading-[1.15] text-brand-olive-dark [overflow-wrap:anywhere] md:text-[2.15rem]">
                     {product.name}
                   </h1>
                   <FavoriteButton
@@ -126,8 +137,8 @@ export function ProductPage({
 
                 <ProductConfigurator product={product} showAccordions={false} />
                 <ProductAccordions product={product} />
-                {complectProducts.length > 0 && product.setArtNos?.length ? (
-                  <ProductComplectSection products={complectProducts} />
+                {product.setArtNos?.length ? (
+                  <Suspense fallback={null}><ComplectProducts products={complectProducts} /></Suspense>
                 ) : null}
                 <a href="#product-reviews" className="mt-5 inline-block text-sm underline underline-offset-4">
                   Отзывы о товаре
@@ -140,11 +151,7 @@ export function ProductPage({
           </div>
 
           <div className="w-full px-[clamp(10px,1.2vw,20px)]">
-            {related.length > 0 && (
-              <div className="mt-5">
-                <ProductRecommendations products={related} />
-              </div>
-            )}
+            <Suspense fallback={null}><RelatedProducts products={relatedProducts} /></Suspense>
           </div>
 
           <div className="mt-4 md:mt-5">

@@ -111,28 +111,10 @@ export async function getCatalogProducts(options?: {
   return products;
 }
 
-async function getAdvantShopProductList(options?: {
-  includeOutOfStock?: boolean;
-}): Promise<Product[]> {
-  if (options?.includeOutOfStock && isAdvantShopConfigured()) {
-    try {
-      return await fetchAdvantShopProducts({ includeOutOfStock: true });
-    } catch (error) {
-      console.error(
-        "AdvantShop out-of-stock catalog unavailable, falling back:",
-        error,
-      );
-    }
-  }
-
-  return getCatalogProducts();
-}
-
 export async function getProductBySlug(
   slug: string,
-  options?: { includeOutOfStock?: boolean },
 ): Promise<Product | undefined> {
-  const products = await getAdvantShopProductList(options);
+  const products = await getCatalogProducts();
   const fromShop = findProductBySlug(products, slug);
   if (fromShop) return fromShop;
   return getStaticProductBySlug(slug);
@@ -140,9 +122,9 @@ export async function getProductBySlug(
 
 export async function getProductDetails(
   slug: string,
-  options?: { includeOutOfStock?: boolean },
 ): Promise<ProductDetails | undefined> {
-  const products = await getAdvantShopProductList(options);
+  // The cached catalog includes sold-out products as well.
+  const products = await getCatalogProducts();
   const summary = findProductBySlug(products, slug);
 
   if (summary) {

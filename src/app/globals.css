@@ -53,10 +53,13 @@ body {
  */
 [data-pdp-layout] {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   row-gap: 1rem;
   column-gap: clamp(1rem, 2.5vw, 3.5rem);
+}
+[data-pdp-layout] > * {
+  min-width: 0;
 }
 @media (min-width: 768px) {
   [data-pdp-layout] {

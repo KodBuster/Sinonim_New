@@ -197,7 +197,7 @@ export function Footer() {
               </a>
             </p>
           </div>
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
             <Link href="/privacy" className="hover:text-brand-text transition-colors">
               Политика конфиденциальности
             </Link>
