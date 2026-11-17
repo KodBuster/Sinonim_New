@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Link previews must receive their metadata in the initial HTML head.
+  htmlLimitedBots: /.*/,
+  serverExternalPackages: ["sharp", "sql.js"],
+  outputFileTracingIncludes: {
+    "/api/reviews/*": ["./node_modules/sql.js/dist/sql-wasm.wasm"],
+  },
   images: {
     localPatterns: [
       {

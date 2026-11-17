@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import styles from "./ProductReviews.module.css";
 
 type Review = { id: number; name: string; rating: number; body: string; updated: number; yes: number; no: number; myVote: 0 | 1 | null };
 type Reviews = {
@@ -10,6 +11,7 @@ type Reviews = {
 };
 const stars = [5, 4, 3, 2, 1];
 const button = "rounded-md border border-brand-olive/30 px-3 py-2 disabled:opacity-50";
+const topics = ["качество", "красота", "серебро", "подарок", "размер", "доставка", "блеск", "упаковка"];
 
 export function ProductReviews({ slug }: { slug: string }) {
   const endpoint = `/api/reviews/${encodeURIComponent(slug)}`;
@@ -19,6 +21,11 @@ export function ProductReviews({ slug }: { slug: string }) {
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sort, setSort] = useState("new");
+  const [query, setQuery] = useState("");
+  const [ratingFilter, setRatingFilter] = useState<number | null>(null);
+  const [topic, setTopic] = useState("");
+  const [limit, setLimit] = useState(8);
+  const [draftRating, setDraftRating] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,71 +70,146 @@ export function ProductReviews({ slug }: { slug: string }) {
 
   const count = data?.distribution.reduce((sum, row) => sum + row.count, 0) ?? 0;
   const score = data?.distribution.reduce((sum, row) => sum + row.rating * row.count, 0) ?? 0;
-  const reviews = data ? [...data.reviews] : [];
+  const average = count ? score / count : 0;
+  const search = query.trim().toLocaleLowerCase("ru-RU");
+  const reviews = (data?.reviews ?? []).filter((review) => {
+    const text = `${review.name} ${review.body}`.toLocaleLowerCase("ru-RU");
+    return (ratingFilter === null || review.rating === ratingFilter)
+      && (!search || text.includes(search))
+      && (!topic || review.body.toLocaleLowerCase("ru-RU").includes(topic));
+  });
   if (sort === "helpful") reviews.sort((a, b) => (b.yes - b.no) - (a.yes - a.no));
+  if (sort === "high") reviews.sort((a, b) => b.rating - a.rating);
+  if (sort === "low") reviews.sort((a, b) => a.rating - b.rating);
+  const availableTopics = topics.filter((word) =>
+    data?.reviews.some((review) => review.body.toLocaleLowerCase("ru-RU").includes(word)));
+  const hasFilters = Boolean(query || topic || ratingFilter !== null);
 
   return (
-    <section id="product-reviews" aria-labelledby="product-reviews-title" className="mx-auto mt-10 max-w-5xl px-4 pb-8 text-brand-olive-dark">
-      <h2 id="product-reviews-title" className="mb-5 font-heading text-2xl md:text-[1.75rem]">Отзывы</h2>
-      {error && <p role="alert" className="my-3 text-sm text-red-700">{error}</p>}
-      {notice && <p role="status" className="my-3">{notice}</p>}
+    <section id="product-reviews" aria-labelledby="product-reviews-title" className={styles.section}>
+      <h2 id="product-reviews-title">Отзывы наших покупателей</h2>
+      {error && <p role="alert" className={styles.error}>{error}</p>}
+      {notice && <p role="status" className={styles.notice}>{notice}</p>}
       {!data && !error && <p role="status">Загружаем отзывы…</p>}
       {data && <>
-        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <div className={styles.overview}>
           <div>
-            {count > 0 ? <>
-              <p className="font-semibold">{(score / count).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} из 5 · Отзывов: {count}</p>
-              <ul className="mt-2 space-y-1 text-sm">
-                {stars.map((rating) => <li key={rating}>{rating} ★ · {data.distribution.find((row) => row.rating === rating)?.count ?? 0}</li>)}
-              </ul>
-            </> : <p>Пока нет отзывов</p>}
-            {data.own?.status === "pending" && !notice && <p className="mt-2 text-sm">Ваш отзыв на модерации.</p>}
-            {data.own?.status === "rejected" && <p className="mt-2 text-sm">Ваш отзыв не опубликован. Его можно отредактировать.</p>}
+            <h3>Отзывы</h3>
+            <p className={styles.intro}>Узнайте, как покупатели оценили украшение. Выберите оценку, чтобы отфильтровать отзывы.</p>
+            <div className={styles.distribution}>
+              {stars.map((rating) => {
+                const amount = data.distribution.find((row) => row.rating === rating)?.count ?? 0;
+                return <button key={rating} type="button" aria-pressed={ratingFilter === rating}
+                  aria-label={`Оценка ${rating} из 5, отзывов: ${amount}`}
+                  onClick={() => { setRatingFilter(ratingFilter === rating ? null : rating); setLimit(8); }}>
+                  <span>{rating} ★</span>
+                  <span className={styles.bar}><span style={{ width: `${count ? amount / count * 100 : 0}%` }} /></span>
+                  <span>{amount}</span>
+                </button>;
+              })}
+            </div>
           </div>
-          <button type="button" className={button} aria-expanded={editing} onClick={() => setEditing(!editing)}>
-            {editing ? "Закрыть форму" : data.own ? "Редактировать отзыв" : "Оставить отзыв"}
-          </button>
+          <div className={styles.score}>
+            <div className={styles.scoreLine}>
+              <span className={styles.average}>{count ? average.toLocaleString("ru-RU", { maximumFractionDigits: 1 }) : "—"}</span>
+              <div>
+                <span className={styles.stars} aria-label={count ? `${average.toFixed(1)} из 5` : "Пока нет оценок"}>
+                  <span aria-hidden="true">☆☆☆☆☆</span>
+                  <span aria-hidden="true" className={styles.filledStars} style={{ width: `${average * 20}%` }}>★★★★★</span>
+                </span>
+                <p>Отзывов: {count}</p>
+              </div>
+            </div>
+            <p>{count ? "Оценка на основе опубликованных отзывов" : "Поделитесь впечатлениями первыми"}</p>
+          </div>
+          <div className={styles.writeReview}>
+            <h3>Оцените это украшение</h3>
+            <div className={styles.ratingButtons} role="group" aria-label="Оставить оценку">
+              {[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button"
+                aria-label={`Написать отзыв с оценкой ${rating} из 5`}
+                aria-pressed={editing && draftRating === rating}
+                onClick={() => { setDraftRating(rating); setEditing(true); }}>
+                <span aria-hidden="true">{editing && draftRating >= rating ? "★" : "☆"}</span>
+              </button>)}
+            </div>
+            <button type="button" className={styles.editButton} aria-expanded={editing} aria-controls="product-review-form"
+              onClick={() => { setDraftRating(data.own?.rating ?? 0); setEditing(!editing); }}>
+              {editing ? "Закрыть форму" : data.own ? "Редактировать отзыв" : "Написать отзыв"}
+            </button>
+            {data.own?.status === "pending" && !notice && <p className={styles.notice}>Ваш отзыв на модерации.</p>}
+            {data.own?.status === "rejected" && <p className={styles.notice}>Ваш отзыв не опубликован. Его можно отредактировать.</p>}
+          </div>
         </div>
-        {editing && <form onSubmit={save} className="mb-6 grid max-w-xl gap-4 rounded-lg border border-brand-sand p-4">
+
+        {editing && <form id="product-review-form" onSubmit={save} className={styles.form}>
           <fieldset className="flex flex-wrap gap-3">
             <legend className="mb-2">Оценка товара</legend>
-            {[...stars].reverse().map((rating) => (
+            {[1, 2, 3, 4, 5].map((rating) => (
               <label key={rating} className="flex items-center gap-1">
-                <input name="rating" type="radio" value={rating} required defaultChecked={data.own?.rating === rating} />
+                <input name="rating" type="radio" value={rating} required checked={draftRating === rating} onChange={() => setDraftRating(rating)} />
                 {rating} ★
               </label>
             ))}
           </fieldset>
-          <label className="grid gap-1">Имя или псевдоним
-            <input name="name" className={button} required minLength={2} maxLength={60} defaultValue={data.own?.name} />
+          <label>Имя или псевдоним
+            <input name="name" required minLength={2} maxLength={60} defaultValue={data.own?.name} />
           </label>
-          <label className="grid gap-1">Ваш отзыв
-            <textarea name="body" className={button} rows={4} required minLength={10} maxLength={2000} defaultValue={data.own?.body} />
+          <label>Ваш отзыв
+            <textarea name="body" rows={4} required minLength={10} maxLength={2000} defaultValue={data.own?.body} />
           </label>
           <button type="submit" disabled={busy} className={button}>Отправить отзыв</button>
         </form>}
-        {reviews.length > 1 && <label className="mb-4 flex items-center gap-2 text-sm">Сортировать
-          <select value={sort} onChange={(event) => setSort(event.target.value)} className={button}>
-            <option value="new">Сначала новые</option>
-            <option value="helpful">Сначала полезные</option>
-          </select>
-        </label>}
-        {reviews.map((review) => <article key={review.id} className="border-t border-brand-sand py-4">
-          <p className="font-semibold">{review.name}</p>
-          <p className="my-1 text-sm"><span aria-label={`Оценка ${review.rating} из 5`}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
-            {" · "}{new Date(review.updated * 1000).toLocaleDateString("ru-RU")}</p>
-          <p className="my-3 whitespace-pre-wrap break-words">{review.body}</p>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span>Был ли отзыв полезен?</span>
-            {([1, 0] as const).map((helpful) => (
-              <button key={helpful} type="button" disabled={busy} aria-pressed={review.myVote === helpful}
-                className={`${button} aria-pressed:bg-brand-sand`}
-                onClick={() => void send({ action: "vote", reviewId: review.id, helpful })}>
-                {helpful ? `Да (${review.yes})` : `Нет (${review.no})`}
-              </button>
-            ))}
-          </div>
-        </article>)}
+
+        <div className={styles.filters}>
+          <label className={styles.search}>
+            <span className="sr-only">Поиск по отзывам</span>
+            <input type="search" placeholder="Поиск по отзывам" value={query}
+              onChange={(event) => { setQuery(event.target.value); setLimit(8); }} />
+            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="10" cy="10" r="6" /><path d="m15 15 6 6" />
+            </svg>
+          </label>
+          {availableTopics.length > 0 && <div className={styles.topics} role="group" aria-label="Темы отзывов">
+            {availableTopics.map((word) => <button key={word} type="button" aria-pressed={topic === word}
+              onClick={() => { setTopic(topic === word ? "" : word); setLimit(8); }}>{word}</button>)}
+          </div>}
+          {hasFilters && <button className={styles.reset} type="button" onClick={() => {
+            setQuery(""); setTopic(""); setRatingFilter(null); setLimit(8);
+          }}>Сбросить фильтры</button>}
+        </div>
+        <div className={styles.resultsToolbar}>
+          <p role="status">{reviews.length ? `1–${Math.min(limit, reviews.length)} из ${reviews.length} отзывов` : count ? "По вашему запросу отзывов нет" : "Пока нет отзывов"}</p>
+          <label>Сортировать
+            <select value={sort} onChange={(event) => { setSort(event.target.value); setLimit(8); }}>
+              <option value="new">Сначала новые</option>
+              <option value="helpful">Сначала полезные</option>
+              <option value="high">С высокой оценкой</option>
+              <option value="low">С низкой оценкой</option>
+            </select>
+          </label>
+        </div>
+        <div className={styles.list}>
+          {reviews.slice(0, limit).map((review) => <article key={review.id} className={styles.review}>
+            <div className={styles.author}>
+              <p>{review.name}</p>
+              <p className={styles.date}>{new Date(review.updated * 1000).toLocaleDateString("ru-RU")}</p>
+            </div>
+            <div className={styles.reviewContent}>
+              <span aria-label={`Оценка ${review.rating} из 5`} className={styles.reviewStars}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+              <p className={styles.body}>{review.body}</p>
+              <div className={styles.votes}>
+                <span>Был ли отзыв полезен?</span>
+                {([1, 0] as const).map((helpful) => (
+                  <button key={helpful} type="button" disabled={busy} aria-pressed={review.myVote === helpful}
+                    onClick={() => void send({ action: "vote", reviewId: review.id, helpful })}>
+                    {helpful ? `Да (${review.yes})` : `Нет (${review.no})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </article>)}
+        </div>
+        {limit < reviews.length && <button type="button" className={styles.more} onClick={() => setLimit(limit + 8)}>Показать ещё отзывы</button>}
       </>}
     </section>
   );

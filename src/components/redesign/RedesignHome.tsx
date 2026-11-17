@@ -501,7 +501,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                         <ProductImage src={product.image} alt="" fill sizes="56px" className="object-contain" />
                       </span>
                       <span className="social-product-copy">
-                        <span className="social-product-name">{product.name}</span>
+                        <span className="social-product-name product-preview-title" title={product.name}>{product.name}</span>
                         <span>{formatPrice(product.price)}</span>
                       </span>
                     </Link>

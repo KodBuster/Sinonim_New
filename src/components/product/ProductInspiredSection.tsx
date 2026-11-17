@@ -494,7 +494,7 @@ function InspiredVideoModal({
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-2 text-sm leading-snug text-white">
+                <p title={product.name} className="product-preview-title text-sm leading-snug text-white">
                   {product.name}
                 </p>
                 <p className="mt-0.5 text-sm font-medium text-white">

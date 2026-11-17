@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+.product-preview-title {
+  display: block !important;
+  min-width: 0;
+  min-height: 0 !important;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap !important;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: unset !important;
+}
+
 :root {
   --color-olive: #525252;
   --color-olive-logo: #4a5335;
@@ -342,6 +353,9 @@ body.mango-chat-open .messenger-fab {
   height: 56px;
 }
 @media (max-width: 767px) {
+  body:has([data-product-sticky-buy]) {
+    padding-bottom: var(--product-sticky-buy-height, calc(140px + env(safe-area-inset-bottom, 0px)));
+  }
   .messenger-fab {
     right: 0;
     transform: translateX(66.6667%);

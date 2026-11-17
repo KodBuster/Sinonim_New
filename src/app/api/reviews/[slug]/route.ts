@@ -37,7 +37,7 @@ function isModerator(request: NextRequest) {
 export async function GET(request: NextRequest, { params }: Context) {
   const { slug } = await params;
   if (!validSlug(slug)) return jsonError("Товар не найден", 404);
-  const db = reviewsDb();
+  const db = await reviewsDb();
   if (request.nextUrl.searchParams.has("moderation")) {
     if (!isModerator(request)) return jsonError("Нет доступа", 403);
     const pending = db.prepare(
@@ -91,14 +91,14 @@ export async function POST(request: NextRequest, { params }: Context) {
     if (!isModerator(request)) return jsonError("Нет доступа", 403);
     if (typeof reviewId !== "number" || !Number.isSafeInteger(reviewId)
       || (data.status !== "published" && data.status !== "rejected")) return jsonError("Недопустимое решение", 400);
-    const result = reviewsDb().prepare("UPDATE reviews SET status = ? WHERE id = ? AND product = ?").run(data.status, reviewId, slug);
+    const result = (await reviewsDb()).prepare("UPDATE reviews SET status = ? WHERE id = ? AND product = ?").run(data.status, reviewId, slug);
     return result.changes ? NextResponse.json({ ok: true }) : jsonError("Отзыв не найден", 404);
   }
   const { token, id } = visitor(request);
   if (action === "vote") {
     if (typeof reviewId !== "number" || !Number.isSafeInteger(reviewId)
       || (data.helpful !== 0 && data.helpful !== 1)) return jsonError("Недопустимый голос", 400);
-    const result = reviewsDb().prepare(`
+    const result = (await reviewsDb()).prepare(`
       INSERT INTO review_votes (review, voter, helpful)
       SELECT id, ?, ? FROM reviews WHERE id = ? AND product = ? AND status = 'published' AND author <> ?
       ON CONFLICT(review, voter) DO UPDATE SET helpful = excluded.helpful
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest, { params }: Context) {
     return jsonError("Укажите имя, оценку и отзыв от 10 до 2000 символов", 400);
   }
   if (!await getProductBySlug(slug)) return jsonError("Товар не найден", 404);
-  reviewsDb().prepare(`
+  (await reviewsDb()).prepare(`
     INSERT INTO reviews (product, author, name, rating, body) VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(product, author) DO UPDATE SET name = excluded.name, rating = excluded.rating,
     body = excluded.body, status = 'pending', updated = unixepoch()

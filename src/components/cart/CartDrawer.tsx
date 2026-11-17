@@ -189,7 +189,7 @@ export function CartDrawer() {
                 <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.recommendationImage}>
                   <ProductImage src={product.image} alt={product.name} fill sizes="160px" className={styles.photo} />
                 </Link>
-                <Link href={`/products/${product.slug}`} onClick={closeCart} className={styles.name}>{product.name}</Link>
+                <Link href={`/products/${product.slug}`} onClick={closeCart} title={product.name} className={`${styles.name} product-preview-title`}>{product.name}</Link>
                 <p>{formatPrice(details ? getProductSizePrice(details, active?.size) : product.price)}</p>
                 {active && (available.length > 0 ? (
                   <select

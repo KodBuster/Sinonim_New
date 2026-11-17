@@ -8,8 +8,8 @@
   ],
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/prepare-standalone.mjs",
-    "build:amvera": "next build && node scripts/prepare-standalone.mjs --amvera",
+    "build": "next build --webpack && node scripts/prepare-standalone.mjs",
+    "build:amvera": "next build --webpack && node scripts/prepare-standalone.mjs --amvera",
     "start": "node scripts/start-server.mjs",
     "lint": "eslint",
     "sync:1c": "node scripts/sync-ftp-to-advantshop.mjs",
@@ -29,11 +29,13 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sharp": "^0.34.5",
+    "sql.js": "^1.16.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "undici": "^7.29.0"
   },
   "devDependencies": {
+    "@types/sql.js": "^1.4.11",
     "eslint": "^9",
     "eslint-config-next": "16.2.7"
   }

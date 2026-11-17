@@ -11,6 +11,7 @@ type PageMetadataOptions = {
   ogImage?: string;
   ogImageWidth?: number;
   ogImageHeight?: number;
+  siteUrl?: string;
   ogType?: "website" | "article";
 };
 
@@ -23,11 +24,14 @@ export function buildPageMetadata({
   ogImage,
   ogImageWidth = 1200,
   ogImageHeight = 630,
+  siteUrl = getSiteUrl(),
   ogType = "website",
 }: PageMetadataOptions): Metadata {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const canonical = `${getSiteUrl()}${normalizedPath === "/" ? "" : normalizedPath}`;
-  const imageUrl = absoluteImageUrl(ogImage ?? DEFAULT_OG_IMAGE);
+  const canonical = `${siteUrl}${normalizedPath === "/" ? "" : normalizedPath}`;
+  const imageUrl = ogImage?.startsWith("/")
+    ? new URL(ogImage, siteUrl).href
+    : absoluteImageUrl(ogImage ?? DEFAULT_OG_IMAGE);
 
   return {
     title,

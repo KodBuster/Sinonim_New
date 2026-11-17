@@ -1,26 +1,35 @@
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import initSqlJs from "sql.js";
 
 type SqlValue = string | number | null;
 type Statement = {
   all(...params: SqlValue[]): unknown[];
   run(...params: SqlValue[]): { changes: number };
 };
-type Database = { exec(sql: string): void; prepare(sql: string): Statement };
+type Database = { prepare(sql: string): Statement };
 
-let database: Database | undefined;
+let database: Promise<Database> | undefined;
 
 export function reviewsDb() {
   if (database) return database;
-  const sqlite = process.getBuiltinModule("node:sqlite") as
-    | { DatabaseSync: new (path: string) => Database }
-    | undefined;
-  if (!sqlite) throw new Error("Reviews require Node.js 24");
+  database = openDatabase().catch((error) => {
+    database = undefined;
+    throw error;
+  });
+  return database;
+}
+
+async function openDatabase(): Promise<Database> {
   const path = process.env.REVIEWS_DB_PATH || (process.env.NODE_ENV === "production" && process.platform === "linux"
     ? "/data/reviews.sqlite"
     : join(process.cwd(), "data", "reviews.sqlite"));
   mkdirSync(dirname(path), { recursive: true });
-  const db = new sqlite.DatabaseSync(path);
+  const SQL = await initSqlJs({
+    wasmBinary: new Uint8Array(readFileSync(join(process.cwd(), "node_modules/sql.js/dist/sql-wasm.wasm"))).buffer,
+  });
+  let saved = existsSync(path) ? readFileSync(path) : undefined;
+  let db = new SQL.Database(saved);
   db.exec(`
     PRAGMA busy_timeout = 5000;
     PRAGMA foreign_keys = ON;
@@ -43,6 +52,46 @@ export function reviewsDb() {
       PRIMARY KEY (review, voter)
     );
   `);
-  database = db;
-  return db;
+  function persist() {
+    const temporary = `${path}.${process.pid}.tmp`;
+    try {
+      const bytes = Buffer.from(db.export());
+      writeFileSync(temporary, bytes, { mode: 0o600 });
+      renameSync(temporary, path);
+      saved = bytes;
+    } catch (error) {
+      db.close();
+      db = new SQL.Database(saved);
+      db.run("PRAGMA foreign_keys = ON");
+      throw error;
+    } finally {
+      rmSync(temporary, { force: true });
+    }
+    // sql.js export reopens the database connection, so restore foreign keys.
+    db.run("PRAGMA foreign_keys = ON");
+  }
+  persist();
+  return {
+    prepare(sql) {
+      return {
+        all(...params) {
+          const statement = db.prepare(sql);
+          try {
+            statement.bind(params);
+            const rows = [];
+            while (statement.step()) rows.push(statement.getAsObject());
+            return rows;
+          } finally {
+            statement.free();
+          }
+        },
+        run(...params) {
+          db.run(sql, params);
+          const changes = db.getRowsModified();
+          if (changes) persist();
+          return { changes };
+        },
+      };
+    },
+  };
 }

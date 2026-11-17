@@ -31,7 +31,7 @@ export function ProductCard({ product }: { product: RedesignProduct }) {
         </button>
       </div>
       <div className="card-details">
-        <Link className="card-name" href={`/products/${product.slug}`}>
+        <Link className="card-name product-preview-title" title={product.name} href={`/products/${product.slug}`}>
           {product.name}
         </Link>
         <strong>{formatPrice(product.price)}</strong>

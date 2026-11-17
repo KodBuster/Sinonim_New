@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { ProductPage } from "@/components/product/ProductPage";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildPageMetadata } from "@/lib/metadata";
+import { getRequestSiteUrl } from "@/lib/request-site-url";
 import { buildProductMetaDescription } from "@/lib/product-metadata";
 import { isLegacyProductSlug } from "@/lib/product-slug";
 import { buildProductJsonLd } from "@/lib/product-schema";
@@ -33,6 +34,7 @@ export async function generateMetadata({ params }: PageProps) {
       title: `${product.name} — купить в Синоним`,
       description: buildProductMetaDescription(product),
       path: `/products/${canonicalSlug}`,
+      siteUrl: await getRequestSiteUrl(),
       ogImage: `/api/products/${encodeURIComponent(canonicalSlug)}/share-image`,
       ogImageWidth: 1000,
       ogImageHeight: 1250,
