@@ -45,6 +45,12 @@ export async function GET(request: NextRequest, { params }: Context) {
     ).all();
     return NextResponse.json({ pending }, { headers: { "Cache-Control": "private, no-store" } });
   }
+  if (request.nextUrl.searchParams.has("summary")) {
+    const distribution = db.prepare(
+      "SELECT rating, COUNT(*) AS count FROM reviews WHERE product = ? AND status = 'published' GROUP BY rating",
+    ).all(slug);
+    return NextResponse.json({ distribution }, { headers: { "Cache-Control": "no-store" } });
+  }
   const { token, id } = visitor(request);
   const reviews = db.prepare(`
     SELECT r.id, r.name, r.rating, r.body, r.updated,

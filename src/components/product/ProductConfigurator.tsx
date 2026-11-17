@@ -7,6 +7,7 @@ import { trackAddToCart } from "@/lib/analytics/metrika";
 import { FREE_DELIVERY_THRESHOLD } from "@/lib/checkout";
 import { formatInsertMassLabel } from "@/lib/synthetic-diamond-labels";
 import { formatPrice, type ProductDetails } from "@/lib/products";
+import { ProductRatingShare } from "./ProductRatingShare";
 import { useProductSelection } from "./ProductSelectionContext";
 import { ProductAccordions } from "./ProductAccordions";
 
@@ -171,6 +172,8 @@ export function ProductConfigurator({
           <p className="mt-2 text-sm font-medium text-brand-terracotta">Скоро будет</p>
         ) : null}
       </div>
+
+      <ProductRatingShare key={product.slug} slug={product.slug} />
 
       <div className="space-y-4">
         {needsSize ? (
