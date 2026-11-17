@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { formatPrice } from "@/lib/products";
 import styles from "./ProductStickyBuy.module.css";
@@ -14,6 +14,20 @@ export function ProductStickyBuy({ anchor, name, price, label, disabled, onBuy }
   onBuy: () => void;
 }) {
   const [visible, setVisible] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!visible || !panel.current) return;
+    const element = panel.current;
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty("--product-sticky-buy-height", `${element.getBoundingClientRect().height}px`);
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty("--product-sticky-buy-height");
+    };
+  }, [visible]);
 
   useEffect(() => {
     const button = anchor.current;
@@ -27,7 +41,7 @@ export function ProductStickyBuy({ anchor, name, price, label, disabled, onBuy }
 
   if (!visible) return null;
   return createPortal(
-    <section data-product-sticky-buy className={styles.panel} aria-label="Купить товар">
+    <section ref={panel} data-product-sticky-buy className={styles.panel} aria-label="Купить товар">
       <div className={styles.summary}>
         <p title={name}>{name}</p>
         <span>{formatPrice(price)}</span>

@@ -1,0 +1,15 @@
+.bestsellers { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; }
+.bestsellers :global(.product-card) { flex: 0 0 calc((100% - 30px) / 4); min-width: 0; scroll-snap-align: start; }
+.bestsellers :global(.card-media) { position: relative; aspect-ratio: 4 / 5; background: #fff; }
+.bestsellers :global(.card-media > a) { display: flex; width: 100%; height: 100%; align-items: center; }
+.bestsellers :global(.product-image) { display: block; width: 100%; height: auto; object-fit: contain; }
+.bestsellers :global(.card-heart) { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; font-size: 24px; cursor: pointer; color: var(--color-brand-olive-dark, #292d27); }
+.bestsellers :global(.card-details) { display: grid; gap: 8px; padding: 12px 2px; font-size: 13px; }
+.bestsellers :global(.card-name) { line-height: 1.5; }
+.bestsellers :global(.card-details strong) { font-weight: 400; }
+@media (max-width: 1023px) {
+  .bestsellers :global(.product-card) { flex-basis: calc((100% - 20px) / 3); }
+}
+@media (max-width: 767px) {
+  .bestsellers :global(.product-card) { flex-basis: calc((100% - 10px) / 2); }
+}

@@ -1,5 +1,8 @@
 ﻿import Image from "next/image";
 import Link from "next/link";
+import { ProductCard } from "@/components/redesign/ProductCard";
+import { BESTSELLER_ORDER, productsByIds } from "@/components/redesign/data";
+import styles from "./AboutPage.module.css";
 
 const PILLARS = [
   {
@@ -85,6 +88,19 @@ export function AboutPage() {
                 sizes="(max-width: 1024px) 100vw, 40vw"
               />
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="about-bestsellers-heading" className="pb-12 md:pb-16">
+        <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10">
+          <h2 id="about-bestsellers-heading" className="mb-8 font-heading text-3xl text-brand-olive-dark md:text-4xl">
+            Бестселлеры
+          </h2>
+          <div className={styles.bestsellers}>
+            {productsByIds(BESTSELLER_ORDER).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
           </div>
         </div>
       </section>

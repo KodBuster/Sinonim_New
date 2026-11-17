@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   getProductSizeLabel,
   getProductSizePrice,
@@ -58,6 +58,7 @@ export function ProductSelectionProvider({
   children: ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sizeParam = searchParams.get("size");
 
@@ -68,6 +69,8 @@ export function ProductSelectionProvider({
 
   useEffect(() => {
     if (isValidSize(product, sizeParam) && sizeParam !== selectedSize) {
+      // Synchronize the selection when the URL is restored by browser navigation.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedSizeState(sizeParam);
     }
     // Intentionally only sync when URL size changes.
@@ -92,10 +95,10 @@ export function ProductSelectionProvider({
       if (size) params.set("size", size);
       else params.delete("size");
       const query = params.toString();
-      const next = query ? `${pathname}?${query}` : pathname;
-      window.history.replaceState(null, "", next);
+      const next = `${query ? `${pathname}?${query}` : pathname}${window.location.hash}`;
+      router.replace(next, { scroll: false });
     },
-    [pathname],
+    [pathname, router],
   );
 
   const value = useMemo(
