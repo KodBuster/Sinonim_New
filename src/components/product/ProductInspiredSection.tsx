@@ -11,70 +11,30 @@ const INSPIRATION_VIDEOS = [
   "/images/braslet_video_3.mp4",
   "/images/braslet_video_6.mp4",
   "/images/braslet_video_7.mp4",
+  "/images/new1_live.mp4",
+  "/images/new2_live.mp4",
+  "/images/new3_live.mp4",
 ] as const;
 
 const PRODUCT_CARD_DELAY_MS = 1000;
 
 type InspiredProduct = ProductDetails;
 
-/** Chrome часто не рисует кадр от одного seek — короткий play→pause надёжнее */
-function paintFirstFrame(video: HTMLVideoElement) {
-  if (!video.paused) return;
-
-  const finish = () => {
-    if (!video.paused) return;
-    try {
-      if (video.currentTime < 0.05) video.currentTime = 0.001;
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const kick = async () => {
-    if (!video.paused) return;
-    try {
-      video.muted = true;
-      await video.play();
-      video.pause();
-      finish();
-    } catch {
-      finish();
-    }
-  };
-
-  if (video.readyState >= 2) {
-    void kick();
-    return;
-  }
-  video.addEventListener("loadeddata", () => void kick(), { once: true });
-  video.addEventListener("canplay", () => void kick(), { once: true });
-}
-
 function framePosterForVideo(src: string) {
   return src.replace(/\.mp4$/i, "-frame.png");
 }
 
 function InspiredStripThumb({ src }: { src: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const poster = framePosterForVideo(src);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) paintFirstFrame(video);
-  }, [src]);
 
   return (
     <video
-      ref={videoRef}
       src={src}
       poster={poster}
       className="pointer-events-none h-full w-full object-cover"
       muted
       playsInline
-      preload="auto"
-      onLoadedMetadata={(event) => paintFirstFrame(event.currentTarget)}
-      onLoadedData={(event) => paintFirstFrame(event.currentTarget)}
-      onCanPlay={(event) => paintFirstFrame(event.currentTarget)}
+      preload="none"
       aria-hidden
     />
   );

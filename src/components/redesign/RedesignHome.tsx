@@ -92,14 +92,14 @@ function LineArrow({ dir }: { dir: "prev" | "next" }) {
   );
 }
 
-const SOCIAL_VIDEOS = [
+const SOCIAL_VIDEOS: ({ src: string; article?: string } | null)[] = [
   null,
-  null,
+  { src: "/images/new1_live.mp4" },
   { src: "/images/braslet_video_6.mp4", article: "194-030210-11" },
   { src: "/images/braslet_video_3.mp4", article: "194-030210-1" },
   { src: "/images/braslet_video_7.mp4", article: "194-032002-5" },
-  null,
-  null,
+  { src: "/images/new2_live.mp4" },
+  { src: "/images/new3_live.mp4" },
   null,
 ];
 const PLAYABLE_SOCIAL_INDICES = SOCIAL_VIDEOS.flatMap((video, index) => video ? [index] : []);
@@ -480,7 +480,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
             }}
           >
             {SOCIAL_VIDEOS.map((video, i) => {
-              const product = video ? liveSocialProducts?.[video.article] ?? socialProducts[video.article] : undefined;
+              const product = video?.article ? liveSocialProducts?.[video.article] ?? socialProducts[video.article] : undefined;
               return (
                 <div
                   key={i}
@@ -494,6 +494,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                         <video
                           ref={(element) => { socialVideos.current[i] = element; }}
                           src={video.src}
+                          poster={video.src.replace(/\.mp4$/i, "-frame.png")}
                           className="block h-full w-full object-cover"
                           autoPlay={i === 3}
                           preload={i === 3 ? "auto" : "metadata"}
@@ -504,7 +505,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                         <button
                           type="button"
                           className="absolute inset-0 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white"
-                          aria-label={i === activeSocialVideo ? "Пауза или воспроизведение текущего видео" : `Воспроизвести видео ${i - 1} в центре`}
+                          aria-label={i === activeSocialVideo ? "Пауза или воспроизведение текущего видео" : `Воспроизвести видео ${PLAYABLE_SOCIAL_INDICES.indexOf(i) + 1} в центре`}
                           onClick={() => selectSocialVideo(i)}
                         />
                       </>
