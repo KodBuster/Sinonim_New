@@ -5,6 +5,9 @@
   min-width: 0;
   min-height: 0 !important;
   max-width: 100%;
+  font-family: var(--font-search);
+  /* Пробуем жирнее — Light/Regular слишком «воздушный» на превью */
+  font-weight: 700;
   overflow: hidden;
   white-space: nowrap !important;
   text-overflow: ellipsis;
@@ -35,6 +38,8 @@
   --color-brand-muted: var(--color-text-muted);
   --font-heading: "Playfair Display", Georgia, "Times New Roman", serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  /* Поиск в духе Missoma: лёгкая антиква + светлый гротеск (кириллица, бесплатно) */
+  --font-search: "Cormorant Garamond", "Playfair Display", Georgia, serif;
 }
 
 html {
@@ -56,6 +61,11 @@ body {
 
 .font-body {
   font-family: var(--font-body);
+}
+
+/* Только семейство: вес задают font-medium / font-semibold, иначе 400 перебивает их */
+.font-search {
+  font-family: var(--font-search);
 }
 
 /*

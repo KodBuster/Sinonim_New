@@ -121,7 +121,7 @@ export function ProductPage({
                 ) : null}
 
                 <div className="mb-2 flex items-start justify-between gap-4">
-                  <h1 className="min-w-0 font-heading text-[1.75rem] leading-[1.15] text-brand-olive-dark [overflow-wrap:anywhere] md:text-[2.15rem]">
+                  <h1 className="font-search min-w-0 text-[1.75rem] leading-[1.15] font-semibold text-brand-olive-dark [overflow-wrap:anywhere] md:text-[2.15rem]">
                     {product.name}
                   </h1>
                   <FavoriteButton
@@ -131,7 +131,7 @@ export function ProductPage({
                   />
                 </div>
 
-                <p className="mb-5 text-sm text-brand-muted md:text-[15px]">
+                <p className="font-search mb-5 text-sm font-normal text-brand-muted md:text-[15px]">
                   {productTagline(product)}
                 </p>
 
@@ -140,7 +140,10 @@ export function ProductPage({
                 {product.setArtNos?.length ? (
                   <Suspense fallback={null}><ComplectProducts products={complectProducts} /></Suspense>
                 ) : null}
-                <a href="#product-reviews" className="mt-5 inline-block text-sm underline underline-offset-4">
+                <a
+                  href="#product-reviews"
+                  className="font-search mt-5 inline-block text-sm font-semibold underline underline-offset-4"
+                >
                   Отзывы о товаре
                 </a>
                 <ProductInspiredSection

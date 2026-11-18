@@ -1,10 +1,22 @@
 import type { Metadata } from "next";
+import "@fontsource/inter/cyrillic-300.css";
+import "@fontsource/inter/latin-300.css";
 import "@fontsource/inter/cyrillic-400.css";
 import "@fontsource/inter/latin-400.css";
 import "@fontsource/playfair-display/cyrillic-400.css";
+import "@fontsource/cormorant-garamond/cyrillic-300.css";
+import "@fontsource/cormorant-garamond/latin-300.css";
+import "@fontsource/cormorant-garamond/cyrillic-400.css";
+import "@fontsource/cormorant-garamond/latin-400.css";
+import "@fontsource/cormorant-garamond/cyrillic-600.css";
+import "@fontsource/cormorant-garamond/latin-600.css";
+import "@fontsource/cormorant-garamond/cyrillic-700.css";
+import "@fontsource/cormorant-garamond/latin-700.css";
 import { CartProvider } from "@/context/CartContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { FavoritesProvider } from "@/context/FavoritesContext";
+import { SearchPanelProvider } from "@/context/SearchPanelContext";
+import { SearchPanel } from "@/components/search/SearchPanel";
 import { MangoOfficeChat } from "@/components/MangoOfficeChat";
 import { MessengerFab } from "@/components/MessengerFab";
 import { PageVisitTracker } from "@/components/analytics/PageVisitTracker";
@@ -47,10 +59,13 @@ export default function RootLayout({
         <ScrollToTopOnNavigate />
         <CartProvider>
           <FavoritesProvider>
-            {children}
-            <MessengerFab />
-            <MangoOfficeChat />
-            <CartDrawer />
+            <SearchPanelProvider>
+              {children}
+              <SearchPanel />
+              <MessengerFab />
+              <MangoOfficeChat />
+              <CartDrawer />
+            </SearchPanelProvider>
           </FavoritesProvider>
         </CartProvider>
       </body>

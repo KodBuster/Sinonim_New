@@ -53,14 +53,14 @@ export function ProductRatingShare({ slug }: { slug: string }) {
   return (
     <div className="text-brand-olive-dark">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-        <a href="#product-reviews" aria-label={ratingLabel} className="inline-flex min-h-11 items-center gap-2 text-sm">
+        <a href="#product-reviews" aria-label={ratingLabel} className="font-search inline-flex min-h-11 items-center gap-2 text-sm font-semibold">
           <span aria-hidden="true" className="relative inline-block whitespace-nowrap text-xl leading-none tracking-[2px]">
             <span className="text-brand-olive/30">★★★★★</span>
             <span className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${rating * 20}%` }}>★★★★★</span>
           </span>
           <span>{distribution ? `(${count})` : "Отзывы"}</span>
         </a>
-        <button type="button" onClick={() => void copyLink()} className="inline-flex min-h-11 items-center gap-2 text-sm">
+        <button type="button" onClick={() => void copyLink()} className="font-search inline-flex min-h-11 items-center gap-2 text-sm font-semibold">
           Поделиться
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 16V3m-4 4 4-4 4 4M5 14v6h14v-6" />

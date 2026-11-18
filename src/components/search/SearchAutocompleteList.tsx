@@ -15,6 +15,7 @@ type SearchAutocompleteListProps = {
   open: boolean;
   activeIndex: number;
   listId: string;
+  variant?: "default" | "overlay";
   onSelect: (suggestion: SearchAutocompleteSuggestion) => void;
   onShowAll: () => void;
 };
@@ -34,6 +35,7 @@ export function SearchAutocompleteList({
   open,
   activeIndex,
   listId,
+  variant = "default",
   onSelect,
   onShowAll,
 }: SearchAutocompleteListProps) {
@@ -43,27 +45,28 @@ export function SearchAutocompleteList({
 
   const suggestions = result ? flattenAutocompleteSuggestions(result) : [];
   const hasSuggestions = suggestions.length > 0;
+  const isOverlay = variant === "overlay";
+
+  const shellClass = isOverlay
+    ? "absolute left-0 right-0 top-[calc(100%+0.75rem)] z-50 max-h-[min(42vh,340px)] overflow-y-auto overscroll-contain border border-black/8 bg-white shadow-[0_10px_30px_rgba(40,43,36,0.08)]"
+    : "absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 max-h-[min(42vh,320px)] overflow-y-auto overscroll-contain rounded-xl border border-brand-olive/15 bg-white shadow-lg";
 
   if (loading && !hasSuggestions) {
     return (
-      <div
-        id={listId}
-        role="listbox"
-        className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-xl border border-brand-olive/15 bg-white shadow-lg"
-      >
-        <p className="px-4 py-3 text-sm text-brand-muted">Ищем подсказки…</p>
+      <div id={listId} role="listbox" className={shellClass}>
+        <p className="px-4 py-3 font-body text-sm font-light text-brand-muted">
+          Ищем подсказки…
+        </p>
       </div>
     );
   }
 
   if (!hasSuggestions) {
     return (
-      <div
-        id={listId}
-        role="listbox"
-        className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-xl border border-brand-olive/15 bg-white shadow-lg"
-      >
-        <p className="px-4 py-3 text-sm text-brand-muted">Ничего не найдено</p>
+      <div id={listId} role="listbox" className={shellClass}>
+        <p className="px-4 py-3 font-body text-sm font-light text-brand-muted">
+          Ничего не найдено
+        </p>
         <a
           href={`/search?q=${encodeURIComponent(query.trim())}`}
           onMouseDown={(event) => event.preventDefault()}
@@ -71,7 +74,7 @@ export function SearchAutocompleteList({
             event.preventDefault();
             onShowAll();
           }}
-          className="block w-full border-t border-brand-sand px-4 py-3 text-left text-sm text-brand-terracotta hover:bg-brand-surface transition-colors"
+          className="block w-full border-t border-black/8 px-4 py-3 text-left font-body text-sm font-light text-brand-terracotta transition-opacity hover:opacity-70"
         >
           Искать «{query}» во всём каталоге
         </a>
@@ -82,14 +85,10 @@ export function SearchAutocompleteList({
   let itemIndex = -1;
 
   return (
-    <div
-      id={listId}
-      role="listbox"
-      className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-xl border border-brand-olive/15 bg-white shadow-lg"
-    >
+    <div id={listId} role="listbox" className={shellClass}>
       {result?.categories.length ? (
-        <div className="border-b border-brand-sand">
-          <p className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-muted">
+        <div className="border-b border-black/8">
+          <p className="font-search px-4 pt-4 pb-2 text-[11px] tracking-[0.16em] text-brand-olive-dark uppercase">
             Категории
           </p>
           <ul>
@@ -105,23 +104,15 @@ export function SearchAutocompleteList({
                     aria-selected={isActive}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => onSelect(category)}
-                    className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
+                    className={`block px-4 py-2.5 font-search text-[18px] transition-colors ${
                       isActive
                         ? "bg-brand-surface text-brand-olive-dark"
-                        : "text-brand-text hover:bg-brand-surface"
+                        : "text-brand-olive-dark hover:bg-brand-surface/80"
                     }`}
                   >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-sand text-brand-terracotta">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path
-                          d="M4 7h16M4 12h10M4 17h16"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
-                      </svg>
+                    <span className="underline decoration-black/15 underline-offset-[4px]">
+                      {category.name}
                     </span>
-                    <span className="truncate">{category.name}</span>
                   </Link>
                 </li>
               );
@@ -132,8 +123,8 @@ export function SearchAutocompleteList({
 
       {result?.products.length ? (
         <div>
-          <p className="px-4 pt-3 pb-1 text-[11px] font-medium uppercase tracking-[0.16em] text-brand-muted">
-            Товары
+          <p className="font-search px-4 pt-4 pb-2 text-[11px] tracking-[0.16em] text-brand-olive-dark uppercase">
+            Найденные товары
           </p>
           <ul>
             {result.products.map((product) => {
@@ -148,30 +139,30 @@ export function SearchAutocompleteList({
                     aria-selected={isActive}
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => onSelect(product)}
-                    className={`flex items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
-                      isActive
-                        ? "bg-brand-surface text-brand-olive-dark"
-                        : "text-brand-text hover:bg-brand-surface"
+                    className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                      isActive ? "bg-brand-surface" : "hover:bg-brand-surface/80"
                     }`}
                   >
-                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-brand-sand">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden bg-[#f7f5f2]">
                       <ProductImage
                         src={product.image}
                         alt=""
                         fill
-                        sizes="40px"
+                        sizes="48px"
                         className="object-cover"
                       />
                     </div>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate">{product.name}</span>
+                      <span className="font-search block truncate text-[17px] leading-snug text-brand-olive-dark">
+                        {product.name}
+                      </span>
                       {product.artNo ? (
-                        <span className="block truncate text-xs text-brand-muted">
+                        <span className="mt-0.5 block truncate font-body text-[12px] font-light text-brand-muted">
                           Арт. {product.artNo}
                         </span>
                       ) : null}
                     </span>
-                    <span className="shrink-0 text-sm text-brand-olive-dark">
+                    <span className="shrink-0 font-body text-[13px] font-light text-brand-olive-dark">
                       {formatPrice(product.price)}
                     </span>
                   </Link>
@@ -189,7 +180,7 @@ export function SearchAutocompleteList({
           event.preventDefault();
           onShowAll();
         }}
-        className="block w-full border-t border-brand-sand px-4 py-3 text-left text-sm text-brand-terracotta hover:bg-brand-surface transition-colors"
+        className="block w-full border-t border-black/8 px-4 py-3 text-left font-body text-sm font-light text-brand-terracotta transition-opacity hover:opacity-70"
       >
         {loading ? "Загрузка…" : `Показать все результаты для «${query}»`}
       </a>

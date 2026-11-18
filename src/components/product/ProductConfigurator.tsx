@@ -69,7 +69,7 @@ function ProductPerksCarousel() {
           {trackSlides.map((perk, slideIndex) => (
             <p
               key={`${perk}-${slideIndex}`}
-              className="product-video-safe-label w-full shrink-0 px-4 text-center"
+              className="product-video-safe-label font-search w-full shrink-0 px-4 text-center font-semibold"
             >
               {perk}
             </p>
@@ -170,7 +170,7 @@ export function ProductConfigurator({
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-sm text-brand-olive-dark">
+        <p className="font-search text-sm font-semibold text-brand-olive-dark md:text-base">
           {formatPrice(price)}
         </p>
         {product.inStock === false ? (
@@ -185,7 +185,7 @@ export function ProductConfigurator({
           <div>
             <p
               id="size-label"
-              className={`mb-2 text-sm ${
+              className={`font-search mb-2 text-sm font-semibold ${
                 sizeError ? "text-red-600" : "text-brand-olive-dark"
               }`}
             >
@@ -243,7 +243,7 @@ export function ProductConfigurator({
           ref={buyButton}
           onClick={handleAddToCart}
           disabled={product.inStock === false || !selectedSizeAvailable}
-          className="product-video-safe-label w-full bg-brand-olive-dark px-6 py-3.5 text-center text-sm font-medium tracking-[0.04em] text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45"
+          className="product-video-safe-label font-search w-full bg-brand-olive-dark px-6 py-3.5 text-center text-sm font-semibold tracking-[0.04em] text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-45 md:text-[15px]"
         >
           {product.inStock === false || !selectedSizeAvailable
             ? "Скоро будет"
@@ -253,7 +253,7 @@ export function ProductConfigurator({
         </button>
         <Link
           href="/showroom"
-          className="product-video-safe-label flex w-full items-center justify-center border border-black/15 bg-white px-6 py-3.5 text-sm font-medium tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-olive-dark"
+          className="product-video-safe-label font-search flex w-full items-center justify-center border border-black/15 bg-white px-6 py-3.5 text-sm font-semibold tracking-[0.04em] text-brand-olive-dark transition-colors hover:border-brand-olive-dark md:text-[15px]"
         >
           Примерить в шоуруме
         </Link>

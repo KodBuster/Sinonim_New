@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CartLink } from "@/components/cart/CartLink";
 import { FavoritesLink } from "@/components/favorites/FavoritesLink";
+import { useSearchPanel } from "@/context/SearchPanelContext";
 
 const NAV_ITEMS = [
   { label: "Новая коллекция", href: "/collections/fw-2026" },
@@ -49,6 +50,7 @@ type HeaderProps = {
 
 export function Header({ overlay = false }: HeaderProps) {
   const headerRef = useRef<HTMLElement>(null);
+  const { openSearch } = useSearchPanel();
 
   useLayoutEffect(() => {
     const el = headerRef.current;
@@ -117,13 +119,14 @@ export function Header({ overlay = false }: HeaderProps) {
           </nav>
 
           <div className="ml-auto flex shrink-0 items-center gap-0 pr-0.5 sm:gap-1 sm:pr-0">
-            <Link
-              href="/search"
+            <button
+              type="button"
+              onClick={openSearch}
               className={`${iconButtonClass} p-1.5 sm:p-2.5`}
               aria-label="Поиск по каталогу"
             >
               <IconSearch className="size-5 sm:size-6 lg:size-5" />
-            </Link>
+            </button>
             <Link
               href="/account"
               className={`${iconButtonClass} p-1.5 sm:p-2.5`}

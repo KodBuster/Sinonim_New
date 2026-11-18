@@ -3,12 +3,20 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SearchResults } from "@/components/search/SearchResults";
 import { buildPageMetadata } from "@/lib/metadata";
+import { DEFAULT_CATALOG_SORT, SORT_OPTIONS } from "@/lib/products";
 import { getSearchProducts } from "@/lib/search-service";
 import { getSiteUrl } from "@/lib/site-url";
 
 type PageProps = {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; sort?: string }>;
 };
+
+function resolveSearchSort(raw?: string) {
+  const value = raw?.trim() || DEFAULT_CATALOG_SORT;
+  return SORT_OPTIONS.some((option) => option.id === value)
+    ? value
+    : DEFAULT_CATALOG_SORT;
+}
 
 export async function generateMetadata({
   searchParams,
@@ -38,15 +46,16 @@ export async function generateMetadata({
 }
 
 export default async function SearchPage({ searchParams }: PageProps) {
-  const { q } = await searchParams;
+  const { q, sort: sortParam } = await searchParams;
   const query = q?.trim() ?? "";
+  const sort = resolveSearchSort(sortParam);
 
   let products: Awaited<ReturnType<typeof getSearchProducts>> = [];
   let error: string | undefined;
 
   if (query) {
     try {
-      products = await getSearchProducts(query);
+      products = await getSearchProducts(query, { sort });
     } catch (err) {
       console.error("Search page error:", err);
       error =
@@ -62,7 +71,12 @@ export default async function SearchPage({ searchParams }: PageProps) {
     <>
       <Header />
       <main>
-        <SearchResults query={query} products={products} error={error} />
+        <SearchResults
+          query={query}
+          products={products}
+          error={error}
+          sort={sort}
+        />
       </main>
       <Footer />
     </>

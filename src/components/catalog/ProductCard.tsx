@@ -58,7 +58,7 @@ export function ProductCard({
         <h3 title={product.name} className="product-preview-title text-sm md:text-base text-brand-text group-hover:text-brand-terracotta transition-colors">
           {product.name}
         </h3>
-        <p className="mt-1.5 font-heading text-brand-olive-dark text-lg">
+        <p className="mt-1.5 font-search text-lg font-bold text-brand-olive-dark">
           {formatPrice(product.price)}
         </p>
       </Link>

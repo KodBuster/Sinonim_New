@@ -34,7 +34,7 @@ function AccordionRow({
         aria-expanded={open}
         onClick={onToggle}
       >
-        <span className="text-[15px] font-medium text-brand-olive-dark">
+        <span className="font-search text-[15px] font-semibold tracking-[0.01em] text-brand-olive-dark md:text-[17px]">
           {item.title}
         </span>
         <span
