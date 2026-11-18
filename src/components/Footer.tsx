@@ -125,7 +125,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 py-6 md:py-8">
         {/*
           Мобилка: лого → Покупателям → О нас → соцсети.
-          Десктоп: как раньше — лого+соцсети | Покупателям | Контакты.
+          Десктоп: лого+соцсети | Покупателям | О нас.
           contents на мобилке даёт order дочерним блокам.
         */}
         <div className="flex flex-col gap-0 md:grid md:grid-cols-3 md:gap-10">
@@ -165,16 +165,16 @@ export function Footer() {
           </div>
 
           <div className="order-3 md:order-none">
-            <FooterSection title="Контакты" mobileTitle="О нас">
+            <FooterSection title="О нас">
               <p className="font-search mb-2 text-[15px] font-normal text-brand-text md:font-medium md:text-[#202020]">
                 Шоурум в Москве
               </p>
-              <p className="footer-nums mb-3 text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
+              <p className="font-search mb-3 text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
                 {SHOWROOM.address}
               </p>
               <MetrikaPhoneLink
                 href={SITE_PHONE_TEL}
-                className="footer-nums mb-2 block text-[15px] font-normal text-brand-terracotta transition-colors hover:text-brand-terracotta-logo md:font-medium"
+                className="font-search mb-2 block text-[15px] font-normal text-brand-terracotta transition-colors hover:text-brand-terracotta-logo md:font-medium"
               >
                 {SITE_PHONE}
               </MetrikaPhoneLink>
@@ -184,13 +184,13 @@ export function Footer() {
               >
                 {SITE_EMAIL}
               </a>
-              <p className="footer-nums mb-3 text-[15px] font-normal text-brand-muted md:font-medium md:text-[#404040]">
+              <p className="font-search mb-3 text-[15px] font-normal text-brand-muted md:font-medium md:text-[#404040]">
                 {SHOWROOM.hours}
               </p>
               <p className="font-search text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
                 ООО «СИНОНИМ»
               </p>
-              <p className="footer-nums mt-0 text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
+              <p className="font-search mt-0 text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
                 ИНН 7735173098
                 <br />
                 ОГРН 1187746428484
