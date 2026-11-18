@@ -13,8 +13,12 @@ export function ProductStickyBuy({ anchor, name, price, label, disabled, onBuy }
   disabled: boolean;
   onBuy: () => void;
 }) {
-  const [visible, setVisible] = useState(false);
+  const [pastAnchor, setPastAnchor] = useState(false);
+  const [footerInView, setFooterInView] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const panel = useRef<HTMLElement>(null);
+  /* После основной кнопки; на отзывах оставляем; на подвале и при клавиатуре убираем */
+  const visible = pastAnchor && !footerInView && !keyboardOpen;
 
   useEffect(() => {
     if (!visible || !panel.current) return;
@@ -33,11 +37,65 @@ export function ProductStickyBuy({ anchor, name, price, label, disabled, onBuy }
     const button = anchor.current;
     if (!button) return;
     const observer = new IntersectionObserver(([entry]) => {
-      setVisible(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0);
+      setPastAnchor(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0);
     });
     observer.observe(button);
     return () => observer.disconnect();
   }, [anchor]);
+
+  useEffect(() => {
+    const footer = document.querySelector("[data-site-footer]");
+    if (!footer) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      setFooterInView(entry.isIntersecting);
+    });
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const isTextField = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+      if (target instanceof HTMLTextAreaElement) return true;
+      if (!(target instanceof HTMLInputElement)) return false;
+      return !["button", "submit", "checkbox", "radio", "file", "reset", "image", "hidden", "range", "color"].includes(
+        target.type,
+      );
+    };
+
+    /* Источник правды — сжатие visualViewport; фокус сам по себе не держит скрытие после скролла */
+    const isKeyboardVisible = () => {
+      const viewport = window.visualViewport;
+      if (!viewport) return false;
+      return window.innerHeight - viewport.height > 120;
+    };
+
+    const syncKeyboard = () => {
+      setKeyboardOpen(isKeyboardVisible());
+    };
+
+    const onFocusIn = (event: FocusEvent) => {
+      if (isTextField(event.target)) setKeyboardOpen(true);
+    };
+
+    const onFocusOut = () => {
+      window.setTimeout(syncKeyboard, 0);
+    };
+
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    window.addEventListener("scroll", syncKeyboard, true);
+    window.visualViewport?.addEventListener("resize", syncKeyboard);
+    window.visualViewport?.addEventListener("scroll", syncKeyboard);
+    return () => {
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      window.removeEventListener("scroll", syncKeyboard, true);
+      window.visualViewport?.removeEventListener("resize", syncKeyboard);
+      window.visualViewport?.removeEventListener("scroll", syncKeyboard);
+    };
+  }, []);
 
   if (!visible) return null;
   return createPortal(

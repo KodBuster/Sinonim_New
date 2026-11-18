@@ -121,7 +121,7 @@ function FooterSection({ title, mobileTitle = title, children }: {
 
 export function Footer() {
   return (
-    <footer className="font-search bg-[#f7f1e5] text-brand-text border-t border-brand-terracotta mt-auto">
+    <footer data-site-footer className="font-search bg-[#f7f1e5] text-brand-text border-t border-brand-terracotta mt-auto">
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 py-6 md:py-8">
         {/*
           Мобилка: лого → Покупателям → О нас → соцсети.
