@@ -163,7 +163,7 @@ export function CatalogView({
   return (
     <section className="py-8 md:py-12">
       <div className="w-full px-4 md:px-6 lg:px-10">
-        <nav className="text-sm text-brand-muted mb-6" aria-label="Хлебные крошки">
+        <nav className="font-search mb-6 text-[13px] text-brand-muted" aria-label="Хлебные крошки">
           <ol className="flex flex-wrap items-center gap-2">
             <li>
               <Link href="/" className="hover:text-brand-terracotta transition-colors">
@@ -192,13 +192,13 @@ export function CatalogView({
         </nav>
 
         <div className="mb-8 md:mb-10">
-          <p className="text-brand-terracotta text-sm tracking-[0.2em] uppercase mb-2">
+          <p className="font-search mb-2 text-sm font-semibold tracking-[0.2em] text-brand-terracotta uppercase">
             {pageEyebrow}
           </p>
-          <h1 className="font-heading text-3xl md:text-4xl text-brand-olive-dark mb-2">
+          <h1 className="font-search mb-2 text-3xl font-semibold text-brand-olive-dark md:text-4xl">
             {pageTitle}
           </h1>
-          <p className="text-brand-muted text-sm md:text-base max-w-2xl">
+          <p className="font-search max-w-2xl text-sm font-normal text-brand-muted md:text-base">
             {pageDescription}
           </p>
         </div>
@@ -241,7 +241,7 @@ export function CatalogView({
                   onClick={() => setFiltersOpen((open) => !open)}
                   aria-expanded={filtersOpen}
                   aria-controls="catalog-filters"
-                  className="inline-flex touch-manipulation items-center gap-2 rounded-lg border border-brand-olive/20 bg-brand-surface px-4 py-2.5 text-sm text-brand-text transition-colors hover:border-brand-olive [-webkit-tap-highlight-color:transparent]"
+                  className="font-search inline-flex touch-manipulation items-center gap-2 rounded-lg border border-brand-olive/20 bg-brand-surface px-4 py-2.5 text-sm font-medium text-brand-text transition-colors hover:border-brand-olive [-webkit-tap-highlight-color:transparent]"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
                     <path
@@ -259,7 +259,7 @@ export function CatalogView({
                   )}
                 </button>
 
-                <p className="text-sm text-brand-muted">
+                <p className="font-search text-sm font-normal text-brand-muted">
                   {loading
                     ? "Загрузка каталога…"
                     : `${products.length} ${
@@ -286,16 +286,16 @@ export function CatalogView({
               </div>
             ) : catalogError ? (
               <div className="rounded-xl bg-brand-surface p-10 text-center md:p-16">
-                <p className="mb-2 font-heading text-xl text-brand-olive-dark">
+                <p className="font-search mb-2 text-xl font-semibold text-brand-olive-dark">
                   Каталог временно недоступен
                 </p>
-                <p className="mx-auto mb-6 max-w-xl text-sm text-brand-muted">
+                <p className="font-search mx-auto mb-6 max-w-xl text-sm font-normal text-brand-muted">
                   {catalogError}
                 </p>
                 <button
                   type="button"
                   onClick={retryLoad}
-                  className="inline-flex touch-manipulation bg-brand-terracotta px-6 py-3 text-sm tracking-widest uppercase text-white transition-colors hover:bg-brand-terracotta-logo"
+                  className="font-search inline-flex touch-manipulation bg-brand-terracotta px-6 py-3 text-sm font-semibold tracking-widest text-white uppercase transition-colors hover:bg-brand-terracotta-logo"
                 >
                   Попробовать снова
                 </button>
@@ -308,15 +308,15 @@ export function CatalogView({
               </div>
             ) : (
               <div className="rounded-xl bg-brand-surface p-10 text-center md:p-16">
-                <p className="mb-2 font-heading text-xl text-brand-olive-dark">
+                <p className="font-search mb-2 text-xl font-semibold text-brand-olive-dark">
                   Ничего не найдено
                 </p>
-                <p className="mb-6 text-sm text-brand-muted">
+                <p className="font-search mb-6 text-sm font-normal text-brand-muted">
                   Попробуйте изменить фильтры или выберите другую категорию
                 </p>
                 <Link
                   href={basePath}
-                  className="inline-flex bg-brand-terracotta px-6 py-3 text-sm tracking-widest uppercase text-white transition-colors hover:bg-brand-terracotta-logo"
+                  className="font-search inline-flex bg-brand-terracotta px-6 py-3 text-sm font-semibold tracking-widest text-white uppercase transition-colors hover:bg-brand-terracotta-logo"
                 >
                   Сбросить фильтры
                 </Link>

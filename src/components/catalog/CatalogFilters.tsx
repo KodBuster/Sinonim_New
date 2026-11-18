@@ -29,7 +29,7 @@ function FilterSection({
 }) {
   return (
     <div className="border-b border-brand-olive/10 pb-5 mb-5 last:border-0 last:pb-0 last:mb-0">
-      <h3 className="text-xs tracking-[0.2em] uppercase text-brand-muted mb-3">
+      <h3 className="font-search mb-3 text-[13px] font-semibold tracking-[0.14em] text-brand-muted uppercase">
         {title}
       </h3>
       {children}
@@ -74,8 +74,8 @@ function CheckboxItem({
         )}
       </span>
       <span
-        className={`text-sm ${
-          checked ? "text-brand-olive-dark font-medium" : "text-brand-text"
+        className={`font-search text-[15px] ${
+          checked ? "font-medium text-brand-olive-dark" : "font-normal text-brand-text"
         }`}
       >
         {label}
@@ -122,7 +122,7 @@ export function CatalogFilters({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-6 lg:mb-8">
-        <h2 className="font-heading text-xl text-brand-olive-dark">Фильтры</h2>
+        <h2 className="font-search text-xl font-semibold text-brand-olive-dark">Фильтры</h2>
         {onClose ? (
           <button
             type="button"
@@ -192,9 +192,9 @@ export function CatalogFilters({
                   key={id}
                   href={`${basePath}${toggleSize(id)}`}
                   scroll={false}
-                  className={`touch-manipulation rounded-lg border px-2 py-2 text-center text-sm transition-colors [-webkit-tap-highlight-color:transparent] ${
+                  className={`footer-nums touch-manipulation rounded-lg border px-2 py-2 text-center text-sm transition-colors [-webkit-tap-highlight-color:transparent] ${
                     filters.sizes.includes(id)
-                      ? "border-brand-olive bg-brand-surface text-brand-olive-dark font-medium"
+                      ? "border-brand-olive bg-brand-surface font-medium text-brand-olive-dark"
                       : "border-brand-olive/20 bg-brand-surface text-brand-text hover:border-brand-olive"
                   }`}
                 >
@@ -203,7 +203,7 @@ export function CatalogFilters({
               );
             })}
           </div>
-          <p className="mt-3 text-xs text-brand-muted leading-relaxed">
+          <p className="font-search mt-3 text-[13px] leading-relaxed font-normal text-brand-muted">
             Для колец и браслетов.{" "}
             <Link href="/how-size-ring" className="text-brand-terracotta hover:underline">
               Как определить размер →
@@ -216,7 +216,7 @@ export function CatalogFilters({
         <Link
           href={basePath}
           scroll={false}
-          className="mt-4 touch-manipulation text-sm text-brand-terracotta hover:text-brand-terracotta-logo transition-colors"
+          className="font-search mt-4 touch-manipulation text-sm font-medium text-brand-terracotta transition-colors hover:text-brand-terracotta-logo"
         >
           Сбросить фильтры ({activeCount})
         </Link>
