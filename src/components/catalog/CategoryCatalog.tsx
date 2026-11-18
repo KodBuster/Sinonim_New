@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, CATALOG_CATEGORY_SLUGS, PRICE_RANGES, RING_BRACELET_SIZES, type Product } from "@/lib/products";
@@ -10,6 +10,8 @@ import { ProductCard } from "./ProductCard";
 import styles from "./CategoryCatalog.module.css";
 
 const PAGE_SIZE = 30;
+
+type MobilePanel = "category" | "price" | "size" | "complects" | null;
 
 function ProductResults({ products }: { products: Product[] }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -29,6 +31,112 @@ function ProductResults({ products }: { products: Product[] }) {
   </>;
 }
 
+/** Строка фильтра на мобилке: заголовок + плюс, опции во всплывающем окне как у сортировки */
+function MobileFilterRow({
+  title,
+  open,
+  onToggle,
+  onClose,
+  children,
+  badge,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  children: ReactNode;
+  badge?: string;
+}) {
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null;
+      if (target && !rootRef.current?.contains(target)) onCloseRef.current();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseRef.current();
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className={`${styles.filterSection} ${styles.mobileFilterRow}`}>
+      <button
+        type="button"
+        className={styles.mobileFilterTrigger}
+        aria-expanded={open}
+        aria-controls={open ? listId : undefined}
+        onClick={onToggle}
+      >
+        <span>
+          {title}
+          {badge ? <span className={styles.mobileFilterBadge}>{badge}</span> : null}
+        </span>
+        <span className={styles.mobileFilterPlus} aria-hidden="true">{open ? "−" : "+"}</span>
+      </button>
+      {open ? (
+        <div id={listId} className={styles.mobileFilterPopup} role="listbox" aria-label={title}>
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PopupOption({
+  selected,
+  onSelect,
+  children,
+  multi = false,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+  multi?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="option"
+      aria-selected={selected}
+      className={styles.mobilePopupOption}
+      onClick={onSelect}
+    >
+      <span
+        className={`${styles.mobilePopupMark} ${multi ? styles.mobilePopupMarkSquare : ""} ${
+          selected ? styles.mobilePopupMarkSelected : ""
+        }`}
+        aria-hidden
+      >
+        {selected ? (
+          multi ? (
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+              <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : (
+            <span className={styles.mobilePopupDot} />
+          )
+        ) : null}
+      </span>
+      <span>{children}</span>
+    </button>
+  );
+}
+
 export function CategoryCatalog({ title, description, products, filters, basePath, loading, error, onRetry }: {
   title: string;
   description: string;
@@ -42,6 +150,7 @@ export function CategoryCatalog({ title, description, products, filters, basePat
   const router = useRouter();
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
   const { category } = filters;
   const isShop = basePath === "/shop";
   const activeCount = countActiveFilters(filters) + (isShop && category ? 1 : 0);
@@ -56,6 +165,51 @@ export function CategoryCatalog({ title, description, products, filters, basePat
   const toggle = (key: "priceRanges" | "sizes", value: string) => ({
     [key]: filters[key].includes(value) ? filters[key].filter(item => item !== value) : [...filters[key], value],
   });
+  const closeMobilePanel = () => {
+    setMobilePanel(null);
+  };
+  const toggleMobilePanel = (panel: Exclude<MobilePanel, null>) => {
+    setMobilePanel((current) => (current === panel ? null : panel));
+  };
+
+  const categoryOptions = (
+    <div className={styles.options}>
+      {[undefined, ...CATALOG_CATEGORY_SLUGS].map((slug) => (
+        <label key={slug ?? "all"}>
+          <input
+            type="radio"
+            name="catalog-category"
+            checked={category === slug}
+            onChange={() => router.push(href({
+              category: slug,
+              sizes: shouldShowSizeFilter(slug) ? filters.sizes : [],
+            }), { scroll: false })}
+          />
+          {slug ? CATEGORIES[slug].title : "Все украшения"}
+        </label>
+      ))}
+    </div>
+  );
+
+  const priceOptions = (
+    <div className={styles.options}>{PRICE_RANGES.map(range => <label key={range.id}>
+      <input type="checkbox" checked={filters.priceRanges.includes(range.id)} onChange={() => router.push(href(toggle("priceRanges", range.id)), { scroll: false })} />{range.label}
+    </label>)}</div>
+  );
+
+  const sizeOptions = (
+    <>
+      <div className={styles.sizes}>{RING_BRACELET_SIZES.map(size => <Link key={size} href={href(toggle("sizes", String(size)))} scroll={false}
+        aria-label={`Размер ${String(size).replace(".", ",")}${filters.sizes.includes(String(size)) ? ", выбран" : ""}`}
+        className={filters.sizes.includes(String(size)) ? styles.selected : ""}>{String(size).replace(".", ",")}</Link>)}</div>
+      <Link className={styles.sizeGuide} href="/how-size-ring">Как определить размер</Link>
+    </>
+  );
+
+  const complectsOptions = (
+    <div className={styles.options}><label><input type="checkbox" checked={filters.complectsOnly}
+      onChange={() => router.push(href({ complectsOnly: !filters.complectsOnly }), { scroll: false })} />В составе комплекта</label></div>
+  );
 
   return <section className={styles.catalog}>
     <div className={isShop ? `${styles.intro} ${styles.shopIntro}` : styles.intro}>
@@ -89,7 +243,10 @@ export function CategoryCatalog({ title, description, products, filters, basePat
       <button className={styles.desktopToggle} type="button" aria-expanded={desktopOpen} aria-controls="category-filters"
         onClick={() => setDesktopOpen(value => !value)}><span aria-hidden="true">☷</span> {desktopOpen ? "Скрыть фильтры" : "Показать фильтры"}</button>
       <button className={styles.mobileToggle} type="button" aria-expanded={mobileOpen} aria-controls="category-filters"
-        onClick={() => setMobileOpen(value => !value)}><span aria-hidden="true">☷</span> Фильтры{activeCount ? ` (${activeCount})` : ""}</button>
+        onClick={() => {
+          setMobileOpen(value => !value);
+          setMobilePanel(null);
+        }}><span aria-hidden="true">☷</span> Фильтры{activeCount ? ` (${activeCount})` : ""}</button>
       <p className={styles.count}>{loading ? "Загрузка…" : `${products.length} товаров`}</p>
       <div className={styles.sort}>
         <SearchSortMenu
@@ -100,47 +257,134 @@ export function CategoryCatalog({ title, description, products, filters, basePat
     </div>
     <div className={`${styles.layout} ${!desktopOpen ? styles.withoutSidebar : ""}`}>
       <aside id="category-filters" aria-label="Фильтры товаров" className={`${styles.sidebar} ${!desktopOpen ? styles.desktopHidden : ""} ${mobileOpen ? styles.mobileOpen : ""}`}>
-        {isShop && (
+        {/* Десктоп: как раньше — аккордеон details */}
+        <div className={styles.desktopFilters}>
+          {isShop && (
+            <details className={styles.filterSection}>
+              <summary>Категория</summary>
+              {categoryOptions}
+            </details>
+          )}
           <details className={styles.filterSection}>
-            <summary>Категория</summary>
-            <div className={styles.options}>
-              {[undefined, ...CATALOG_CATEGORY_SLUGS].map((slug) => (
-                <label key={slug ?? "all"}>
-                  <input
-                    type="radio"
-                    name="catalog-category"
-                    checked={category === slug}
-                    onChange={() => router.push(href({
-                      category: slug,
-                      sizes: shouldShowSizeFilter(slug) ? filters.sizes : [],
-                    }), { scroll: false })}
-                  />
-                  {slug ? CATEGORIES[slug].title : "Все украшения"}
-                </label>
-              ))}
-            </div>
+            <summary>Цена</summary>
+            {priceOptions}
           </details>
-        )}
-        <details className={styles.filterSection}>
-          <summary>Цена</summary>
-          <div className={styles.options}>{PRICE_RANGES.map(range => <label key={range.id}>
-            <input type="checkbox" checked={filters.priceRanges.includes(range.id)} onChange={() => router.push(href(toggle("priceRanges", range.id)), { scroll: false })} />{range.label}
-          </label>)}</div>
-        </details>
-        {showSizeFilter && <details className={styles.filterSection}>
-          <summary>Размер</summary>
-          <div className={styles.sizes}>{RING_BRACELET_SIZES.map(size => <Link key={size} href={href(toggle("sizes", String(size)))} scroll={false}
-            aria-label={`Размер ${String(size).replace(".", ",")}${filters.sizes.includes(String(size)) ? ", выбран" : ""}`}
-            className={filters.sizes.includes(String(size)) ? styles.selected : ""}>{String(size).replace(".", ",")}</Link>)}</div>
-          <Link className={styles.sizeGuide} href="/how-size-ring">Как определить размер</Link>
-        </details>}
-        <details className={styles.filterSection}>
-          <summary>Комплекты{filters.complectsOnly ? " (1)" : ""}</summary>
-          <div className={styles.options}><label><input type="checkbox" checked={filters.complectsOnly}
-            onChange={() => router.push(href({ complectsOnly: !filters.complectsOnly }), { scroll: false })} />В составе комплекта</label></div>
-        </details>
+          {showSizeFilter && <details className={styles.filterSection}>
+            <summary>Размер</summary>
+            {sizeOptions}
+          </details>}
+          <details className={styles.filterSection}>
+            <summary>Комплекты{filters.complectsOnly ? " (1)" : ""}</summary>
+            {complectsOptions}
+          </details>
+        </div>
+
+        {/* Мобилка: компактные строки + попап в стиле сортировки */}
+        <div className={styles.mobileFilters}>
+          {isShop && (
+            <MobileFilterRow
+              title="Категория"
+              open={mobilePanel === "category"}
+              onToggle={() => toggleMobilePanel("category")}
+              onClose={closeMobilePanel}
+            >
+              <ul className={styles.mobilePopupList}>
+                {[undefined, ...CATALOG_CATEGORY_SLUGS].map((slug) => (
+                  <li key={slug ?? "all"}>
+                    <PopupOption
+                      selected={category === slug}
+                      onSelect={() => {
+                        router.push(href({
+                          category: slug,
+                          sizes: shouldShowSizeFilter(slug) ? filters.sizes : [],
+                        }), { scroll: false });
+                        closeMobilePanel();
+                      }}
+                    >
+                      {slug ? CATEGORIES[slug].title : "Все украшения"}
+                    </PopupOption>
+                  </li>
+                ))}
+              </ul>
+            </MobileFilterRow>
+          )}
+          <MobileFilterRow
+            title="Цена"
+            open={mobilePanel === "price"}
+            onToggle={() => toggleMobilePanel("price")}
+            onClose={closeMobilePanel}
+            badge={filters.priceRanges.length ? `(${filters.priceRanges.length})` : undefined}
+          >
+            <ul className={styles.mobilePopupList}>
+              {PRICE_RANGES.map((range) => (
+                <li key={range.id}>
+                  <PopupOption
+                    multi
+                    selected={filters.priceRanges.includes(range.id)}
+                    onSelect={() => router.push(href(toggle("priceRanges", range.id)), { scroll: false })}
+                  >
+                    {range.label}
+                  </PopupOption>
+                </li>
+              ))}
+            </ul>
+          </MobileFilterRow>
+          {showSizeFilter && (
+            <MobileFilterRow
+              title="Размер"
+              open={mobilePanel === "size"}
+              onToggle={() => toggleMobilePanel("size")}
+              onClose={closeMobilePanel}
+              badge={filters.sizes.length ? `(${filters.sizes.length})` : undefined}
+            >
+              <div className={styles.mobilePopupSizes}>
+                {RING_BRACELET_SIZES.map((size) => {
+                  const id = String(size);
+                  const selected = filters.sizes.includes(id);
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={selected}
+                      className={selected ? styles.selected : undefined}
+                      onClick={() => router.push(href(toggle("sizes", id)), { scroll: false })}
+                    >
+                      {String(size).replace(".", ",")}
+                    </button>
+                  );
+                })}
+              </div>
+              <Link className={styles.sizeGuide} href="/how-size-ring" onClick={closeMobilePanel}>
+                Как определить размер
+              </Link>
+            </MobileFilterRow>
+          )}
+          <MobileFilterRow
+            title="Комплекты"
+            open={mobilePanel === "complects"}
+            onToggle={() => toggleMobilePanel("complects")}
+            onClose={closeMobilePanel}
+            badge={filters.complectsOnly ? "(1)" : undefined}
+          >
+            <ul className={styles.mobilePopupList}>
+              <li>
+                <PopupOption
+                  multi
+                  selected={filters.complectsOnly}
+                  onSelect={() => {
+                    router.push(href({ complectsOnly: !filters.complectsOnly }), { scroll: false });
+                    closeMobilePanel();
+                  }}
+                >
+                  В составе комплекта
+                </PopupOption>
+              </li>
+            </ul>
+          </MobileFilterRow>
+        </div>
+
         {activeCount > 0 && <Link className={styles.reset} href={href({ category: isShop ? undefined : category, priceRanges: [], sizes: [], complectsOnly: false, newOnly: false })} scroll={false}>Сбросить фильтры ({activeCount})</Link>}
-        <button className={styles.apply} type="button" onClick={() => setMobileOpen(false)}>Показать товары ({products.length})</button>
+        <button className={styles.apply} type="button" onClick={() => { setMobileOpen(false); setMobilePanel(null); }}>Показать товары ({products.length})</button>
       </aside>
       <div className={styles.results} aria-busy={loading}>
         {loading ? <div className={styles.grid}>{Array.from({ length: 6 }, (_, i) => <div key={i} className={styles.skeleton} />)}</div>

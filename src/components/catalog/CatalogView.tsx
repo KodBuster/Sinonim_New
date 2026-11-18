@@ -195,10 +195,10 @@ export function CatalogView({
           <p className="font-search mb-2 text-sm font-semibold tracking-[0.2em] text-brand-terracotta uppercase">
             {pageEyebrow}
           </p>
-          <h1 className="font-search mb-2 text-3xl font-semibold text-brand-olive-dark md:text-4xl">
+          <h1 className="font-search mb-2 text-3xl font-bold text-brand-olive-dark md:text-4xl">
             {pageTitle}
           </h1>
-          <p className="font-search max-w-2xl text-sm font-normal text-brand-muted md:text-base">
+          <p className="font-search max-w-2xl text-sm font-medium text-[#404040] md:text-base">
             {pageDescription}
           </p>
         </div>

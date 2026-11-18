@@ -29,7 +29,7 @@ function FilterSection({
 }) {
   return (
     <div className="border-b border-brand-olive/10 pb-5 mb-5 last:border-0 last:pb-0 last:mb-0">
-      <h3 className="font-search mb-3 text-[13px] font-semibold tracking-[0.14em] text-brand-muted uppercase">
+      <h3 className="font-search mb-3 text-[14px] font-bold tracking-[0.1em] text-brand-olive-dark uppercase">
         {title}
       </h3>
       {children}
@@ -75,7 +75,7 @@ function CheckboxItem({
       </span>
       <span
         className={`font-search text-[15px] ${
-          checked ? "font-medium text-brand-olive-dark" : "font-normal text-brand-text"
+          checked ? "font-semibold text-brand-olive-dark" : "font-medium text-brand-text"
         }`}
       >
         {label}
@@ -122,7 +122,7 @@ export function CatalogFilters({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-6 lg:mb-8">
-        <h2 className="font-search text-xl font-semibold text-brand-olive-dark">Фильтры</h2>
+        <h2 className="font-search text-xl font-bold text-brand-olive-dark">Фильтры</h2>
         {onClose ? (
           <button
             type="button"
