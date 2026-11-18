@@ -85,17 +85,18 @@ export function SearchPanel() {
             onClose={closeSearch}
           />
 
-          <div className="mt-8 md:mt-10">
-            <p className="font-search mb-4 text-[12px] tracking-[0.18em] text-brand-olive-dark uppercase">
+          <div className="mt-5 md:mt-10">
+            <p className="font-search mb-3 text-[12px] tracking-[0.18em] text-brand-olive-dark uppercase md:mb-4">
               Категории
             </p>
-            <ul className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-x-8 sm:gap-y-3">
+            {/* Мобилка: в ряд с переносом — экономия высоты при открытой клавиатуре */}
+            <ul className="flex flex-row flex-wrap gap-x-5 gap-y-2.5 md:gap-x-8 md:gap-y-3">
               {QUICK_CATEGORIES.map((item) => (
-                <li key={item.href}>
+                <li key={item.href} className="shrink-0">
                   <Link
                     href={item.href}
                     onClick={closeSearch}
-                    className="font-search text-[20px] leading-tight text-brand-olive-dark underline decoration-black/20 underline-offset-[5px] transition-colors hover:decoration-brand-terracotta hover:text-brand-terracotta md:text-[22px]"
+                    className="font-search text-[18px] leading-tight text-brand-olive-dark underline decoration-black/20 underline-offset-[5px] transition-colors hover:decoration-brand-terracotta hover:text-brand-terracotta md:text-[22px]"
                   >
                     {item.label}
                   </Link>

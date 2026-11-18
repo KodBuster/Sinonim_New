@@ -5,7 +5,6 @@ import {
   CATEGORIES,
   PRICE_RANGES,
   RING_BRACELET_SIZES,
-  SORT_OPTIONS,
   type CategorySlug,
 } from "@/lib/products";
 import {
@@ -14,6 +13,7 @@ import {
   shouldShowSizeFilter,
   type CatalogFilters as Filters,
 } from "@/lib/catalog-utils";
+import { SearchSortMenu } from "@/components/search/SearchSortMenu";
 type CatalogFiltersProps = {
   filters: Filters;
   basePath: string;
@@ -232,36 +232,14 @@ export function SortSelect({
   filters: Filters;
   basePath: string;
 }) {
+  /* Тот же вид, что на поиске: «Сортировка» + чёрточки + radio-список */
   return (
-    <div className="relative">
-      <label htmlFor="sort" className="sr-only">
-        Сортировка
-      </label>
-      <select
-        id="sort"
-        value={filters.sort}
-        onChange={(e) => {
-          const query = buildFilterQuery(filters, { sort: e.target.value });
-          window.location.href = `${basePath}${query}`;
-        }}
-        className="appearance-none bg-brand-surface border border-brand-olive/20 rounded-lg pl-4 pr-10 py-2.5 text-sm text-brand-text focus:outline-none focus:border-brand-olive cursor-pointer"
-      >
-        {SORT_OPTIONS.map((opt) => (
-          <option key={opt.id} value={opt.id}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      <svg
-        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-brand-muted"
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        aria-hidden
-      >
-        <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      </svg>
-    </div>
+    <SearchSortMenu
+      value={filters.sort}
+      onChange={(sort) => {
+        const query = buildFilterQuery(filters, { sort });
+        window.location.href = `${basePath}${query}`;
+      }}
+    />
   );
 }

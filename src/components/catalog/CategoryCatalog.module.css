@@ -16,7 +16,6 @@
 .toolbar .mobileToggle { display: none; }
 .count { color: #666; }
 .sort { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.sort select { padding: 12px 4px; max-width: 205px; background: white; cursor: pointer; }
 .layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 34px; align-items: start; }
 .withoutSidebar { grid-template-columns: minmax(0, 1fr); }
 .sidebar { position: sticky; top: calc(var(--site-header-height, 66px) + 20px); max-height: calc(100dvh - var(--site-header-height, 66px) - 40px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-right: 8px; }
@@ -75,10 +74,9 @@
   .quickLinks { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 5px; }
   .quickLinks a { flex-shrink: 0; }
   .toolbar { gap: 14px; flex-wrap: wrap; padding: 8px 0; }
-  .toolbar .desktopToggle, .sortLabel { display: none; }
+  .toolbar .desktopToggle { display: none; }
   .toolbar .mobileToggle { display: flex; }
   .count { font-size: 11px; }
-  .sort select { max-width: 160px; font-size: 11px; }
   .layout { display: block; }
   .sidebar { display: none; position: static; max-height: none; overflow: visible; overscroll-behavior: auto; padding: 16px 0 24px; }
   .sidebar.mobileOpen { display: block; }

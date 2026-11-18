@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CATEGORIES, CATALOG_CATEGORY_SLUGS, PRICE_RANGES, RING_BRACELET_SIZES, SORT_OPTIONS, type Product } from "@/lib/products";
+import { CATEGORIES, CATALOG_CATEGORY_SLUGS, PRICE_RANGES, RING_BRACELET_SIZES, type Product } from "@/lib/products";
 import { buildFilterQuery, countActiveFilters, shouldShowSizeFilter, type CatalogFilters } from "@/lib/catalog-utils";
+import { SearchSortMenu } from "@/components/search/SearchSortMenu";
 import { ProductCard } from "./ProductCard";
 import styles from "./CategoryCatalog.module.css";
 
@@ -90,11 +91,12 @@ export function CategoryCatalog({ title, description, products, filters, basePat
       <button className={styles.mobileToggle} type="button" aria-expanded={mobileOpen} aria-controls="category-filters"
         onClick={() => setMobileOpen(value => !value)}><span aria-hidden="true">☷</span> Фильтры{activeCount ? ` (${activeCount})` : ""}</button>
       <p className={styles.count}>{loading ? "Загрузка…" : `${products.length} товаров`}</p>
-      <label className={styles.sort}> <span className={styles.sortLabel}>Сортировать:</span>
-        <select aria-label="Сортировка" value={filters.sort} onChange={event => router.push(href({ sort: event.target.value }), { scroll: false })}>
-          {SORT_OPTIONS.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
-        </select>
-      </label>
+      <div className={styles.sort}>
+        <SearchSortMenu
+          value={filters.sort}
+          onChange={(sort) => router.push(href({ sort }), { scroll: false })}
+        />
+      </div>
     </div>
     <div className={`${styles.layout} ${!desktopOpen ? styles.withoutSidebar : ""}`}>
       <aside id="category-filters" aria-label="Фильтры товаров" className={`${styles.sidebar} ${!desktopOpen ? styles.desktopHidden : ""} ${mobileOpen ? styles.mobileOpen : ""}`}>

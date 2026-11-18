@@ -113,9 +113,18 @@ export function ProductConfigurator({
   const cartStoneLabel = formatInsertMassLabel(diamondWeight);
   const [added, setAdded] = useState(false);
   const [sizeTouched, setSizeTouched] = useState(false);
+  const [sizeFlash, setSizeFlash] = useState(false);
   const buyButton = useRef<HTMLButtonElement>(null);
   const sizeChoices = useRef<HTMLDivElement>(null);
+  const sizeFlashTimer = useRef<number | null>(null);
   const { addItem } = useCart();
+
+  useEffect(() => {
+    return () => {
+      if (sizeFlashTimer.current != null) window.clearTimeout(sizeFlashTimer.current);
+    };
+  }, []);
+
   const selectedSizeStock =
     selectedSize && product.sizeStockAmounts
       ? product.sizeStockAmounts[selectedSize]
@@ -131,8 +140,25 @@ export function ProductConfigurator({
   const handleAddToCart = () => {
     if (needsSize && selectedSize == null) {
       setSizeTouched(true);
-      sizeChoices.current?.scrollIntoView({ block: "center", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-      sizeChoices.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus({ preventScroll: true });
+      // Короткая вспышка блока размеров — иначе после скролла непонятно, зачем прыгнули
+      setSizeFlash(true);
+      if (sizeFlashTimer.current != null) window.clearTimeout(sizeFlashTimer.current);
+      sizeFlashTimer.current = window.setTimeout(() => setSizeFlash(false), 1100);
+      // Тактильный отзыв: Android Chrome да, iOS Safari — нет (API не поддерживает)
+      try {
+        navigator.vibrate?.([35, 40, 35]);
+      } catch {
+        /* ignore */
+      }
+      sizeChoices.current?.scrollIntoView({
+        block: "center",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+      sizeChoices.current
+        ?.querySelector<HTMLButtonElement>("button:not(:disabled)")
+        ?.focus({ preventScroll: true });
       return;
     }
     if (!canBuy) return;
@@ -182,7 +208,15 @@ export function ProductConfigurator({
 
       <div className="space-y-4">
         {needsSize ? (
-          <div>
+          <div
+            className={`rounded-lg p-2 -m-2 transition-[box-shadow,background-color] duration-300 ${
+              sizeFlash
+                ? "bg-red-50 ring-2 ring-red-500/80 ring-offset-2"
+                : sizeError
+                  ? "ring-1 ring-red-400/70"
+                  : ""
+            }`}
+          >
             <p
               id="size-label"
               className={`font-search mb-2 text-sm font-semibold ${
@@ -198,11 +232,17 @@ export function ProductConfigurator({
                 </span>
               )}
             </p>
+            {sizeError ? (
+              <p role="alert" className="mb-2 text-sm font-medium text-red-600">
+                Чтобы добавить в корзину, выберите размер
+              </p>
+            ) : null}
             <div
               ref={sizeChoices}
               className="flex flex-wrap gap-2"
               role="radiogroup"
               aria-labelledby="size-label"
+              aria-invalid={sizeError || undefined}
             >
               {product.sizeOptions.map((size) => {
                 const isSelected = selectedSize === size.value;
@@ -218,6 +258,7 @@ export function ProductConfigurator({
                     onClick={() => {
                       setSelectedSize(size.value);
                       setSizeTouched(true);
+                      setSizeFlash(false);
                     }}
                     className={`relative flex h-10 min-w-10 items-center justify-center whitespace-nowrap rounded-full border px-2 text-sm transition-colors ${
                       isSelected
