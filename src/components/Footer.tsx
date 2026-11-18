@@ -99,7 +99,9 @@ function FooterSection({ title, mobileTitle = title, children }: {
   mobileTitle?: string;
   children: ReactNode;
 }) {
-  const label = "text-brand-terracotta text-xs tracking-[0.2em] uppercase";
+  /* Десктоп чуть чернее/плотнее, как Missoma; мобилка без перегруза */
+  const label =
+    "font-search text-brand-terracotta text-[15px] font-semibold tracking-[0.12em] uppercase md:text-[16px] md:font-bold md:text-[#b85a3a]";
   return (
     <div>
       <div className="hidden md:block">
@@ -119,89 +121,107 @@ function FooterSection({ title, mobileTitle = title, children }: {
 
 export function Footer() {
   return (
-    <footer className="bg-[#f7f1e5] text-brand-text border-t border-brand-terracotta mt-auto">
+    <footer className="font-search bg-[#f7f1e5] text-brand-text border-t border-brand-terracotta mt-auto">
       <div className="mx-auto max-w-7xl px-4 md:px-6 lg:px-10 py-6 md:py-8">
-        <div className="grid grid-cols-1 gap-0 md:grid-cols-3 md:gap-10">
-          <div className="mb-5 md:mb-0 lg:col-span-1">
-            <Link href="/" className="inline-block mb-4 shrink-0">
-              <Image
-                src="/images/logo_20260527190756.png"
-                alt="Синоним"
-                width={1000}
-                height={150}
-                className="h-7 w-auto max-w-none object-contain brightness-0"
-                style={{ width: "auto" }}
-              />
-            </Link>
-            <SocialLinksBlock className="max-w-xs" />
+        {/*
+          Мобилка: лого → Покупателям → О нас → соцсети.
+          Десктоп: как раньше — лого+соцсети | Покупателям | Контакты.
+          contents на мобилке даёт order дочерним блокам.
+        */}
+        <div className="flex flex-col gap-0 md:grid md:grid-cols-3 md:gap-10">
+          <div className="contents md:mb-0 md:flex md:flex-col lg:col-span-1">
+            <div className="order-1 mb-4 md:order-none md:mb-4">
+              <Link href="/" className="inline-block shrink-0">
+                <Image
+                  src="/images/logo_20260527190756.png"
+                  alt="Синоним"
+                  width={1000}
+                  height={150}
+                  className="h-7 w-auto max-w-none object-contain brightness-0"
+                  style={{ width: "auto" }}
+                />
+              </Link>
+            </div>
+            <div className="order-4 mt-1 mb-5 border-t border-brand-sand pt-4 md:order-none md:mt-0 md:mb-0 md:border-0 md:pt-0">
+              <SocialLinksBlock className="max-w-xs" />
+            </div>
           </div>
 
-          <FooterSection title="Покупателям">
-            <ul className="space-y-2.5">
-              {FOOTER_LINKS.info.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-sm text-brand-text hover:text-brand-terracotta transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </FooterSection>
+          <div className="order-2 md:order-none">
+            <FooterSection title="Покупателям">
+              <ul className="space-y-2.5">
+                {FOOTER_LINKS.info.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="font-search text-[15px] font-normal text-brand-text transition-colors hover:text-brand-terracotta md:font-medium md:text-[#202020]"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </FooterSection>
+          </div>
 
-          <FooterSection title="Контакты" mobileTitle="О нас">
-            <p className="text-sm text-brand-text mb-2">Шоурум в Москве</p>
-            <p className="text-sm text-brand-muted mb-3 leading-relaxed">
-              {SHOWROOM.address}
-            </p>
-            <MetrikaPhoneLink
-              href={SITE_PHONE_TEL}
-              className="block text-sm text-brand-terracotta hover:text-brand-terracotta-logo transition-colors mb-2"
-            >
-              {SITE_PHONE}
-            </MetrikaPhoneLink>
-            <a
-              href={SITE_EMAIL_MAILTO}
-              className="block text-sm text-brand-terracotta hover:text-brand-terracotta-logo transition-colors mb-4"
-            >
-              {SITE_EMAIL}
-            </a>
-            <p className="text-sm text-brand-muted mb-3">
-              {SHOWROOM.hours}
-            </p>
-            <p className="text-sm text-brand-muted leading-relaxed">
-              ООО «СИНОНИМ»
-              <br />
-              ИНН 7735173098
-              <br />
-              ОГРН 1187746428484
-            </p>
-
-          </FooterSection>
+          <div className="order-3 md:order-none">
+            <FooterSection title="Контакты" mobileTitle="О нас">
+              <p className="font-search mb-2 text-[15px] font-normal text-brand-text md:font-medium md:text-[#202020]">
+                Шоурум в Москве
+              </p>
+              <p className="footer-nums mb-3 text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
+                {SHOWROOM.address}
+              </p>
+              <MetrikaPhoneLink
+                href={SITE_PHONE_TEL}
+                className="footer-nums mb-2 block text-[15px] font-normal text-brand-terracotta transition-colors hover:text-brand-terracotta-logo md:font-medium"
+              >
+                {SITE_PHONE}
+              </MetrikaPhoneLink>
+              <a
+                href={SITE_EMAIL_MAILTO}
+                className="font-search mb-4 block text-[15px] font-normal text-brand-terracotta transition-colors hover:text-brand-terracotta-logo md:font-medium"
+              >
+                {SITE_EMAIL}
+              </a>
+              <p className="footer-nums mb-3 text-[15px] font-normal text-brand-muted md:font-medium md:text-[#404040]">
+                {SHOWROOM.hours}
+              </p>
+              <p className="font-search text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
+                ООО «СИНОНИМ»
+              </p>
+              <p className="footer-nums mt-0 text-[15px] font-normal leading-relaxed text-brand-muted md:font-medium md:text-[#404040]">
+                ИНН 7735173098
+                <br />
+                ОГРН 1187746428484
+              </p>
+            </FooterSection>
+          </div>
         </div>
 
-        <div className="border-t border-brand-sand mt-10 pt-6 flex flex-col sm:flex-row justify-between gap-4 text-xs text-brand-muted">
+        <div className="mt-10 flex flex-col justify-between gap-4 border-t border-brand-sand pt-6 font-search text-[13px] font-normal text-[#5a5a5a] sm:flex-row md:text-[14px] md:font-medium md:text-[#404040]">
           <div className="flex flex-col gap-2 sm:gap-1">
-            <p>© 2026 Синоним. Все права защищены.</p>
+            <p>
+              © <span className="footer-nums">2026</span> Синоним. Все права
+              защищены.
+            </p>
             <p>
               Разработка Digital Агентство{" "}
               <a
                 href="https://kodbuster.ru/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-brand-text hover:text-brand-terracotta transition-colors"
+                className="text-brand-text transition-colors hover:text-brand-terracotta"
               >
                 KodBuster
               </a>
             </p>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <Link href="/privacy" className="hover:text-brand-text transition-colors">
+            <Link href="/privacy" className="transition-colors hover:text-brand-text">
               Политика конфиденциальности
             </Link>
-            <Link href="/terms" className="hover:text-brand-text transition-colors">
+            <Link href="/terms" className="transition-colors hover:text-brand-text">
               Оферта
             </Link>
           </div>

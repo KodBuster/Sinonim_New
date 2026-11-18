@@ -142,8 +142,9 @@ body[data-inspired-video-open] .product-video-safe-label {
 }
 
 .socials__link--inst {
-  font-family: inherit;
-  font-size: 14px;
+  font-family: var(--font-search, "Cormorant Garamond", Georgia, serif);
+  font-size: 15px;
+  font-weight: 500;
   letter-spacing: 0.02em;
   color: inherit;
   text-decoration: none;
@@ -152,16 +153,35 @@ body[data-inspired-video-open] .product-video-safe-label {
   transition: opacity 0.2s ease;
 }
 
+@media (min-width: 768px) {
+  .socials__link--inst {
+    font-weight: 600;
+    color: #202020;
+  }
+}
+
 .socials__link--inst:hover {
   opacity: 0.7;
 }
 
 .socials__note {
-  font-size: 11px;
-  opacity: 0.5;
+  font-family: var(--font-search, "Cormorant Garamond", Georgia, serif);
+  font-size: 12px;
+  font-weight: 400;
+  /* Было opacity .5 — слишком блёкло на беже */
+  color: #5a5a5a;
   margin-top: 8px;
   max-width: 260px;
   line-height: 1.45;
+}
+
+/* Цифры в подвале: ровный Inter, без old-style Cormorant */
+.footer-nums,
+footer .footer-nums {
+  font-family: Inter, system-ui, -apple-system, sans-serif !important;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+  letter-spacing: 0.02em;
 }
 
 @keyframes hero-unroll {
