@@ -60,10 +60,35 @@ function SectionHead({
       <h2>{title}</h2>
       {href && text ? (
         <Link className="text-link" href={href}>
-          {text} ↗
+          {text}
         </Link>
       ) : null}
     </div>
+  );
+}
+
+/** Тонкая стрелка «линия + наконечник» — как раньше, не скобки ‹ › */
+function LineArrow({ dir }: { dir: "prev" | "next" }) {
+  return (
+    <svg className="nav-line-icon" viewBox="0 0 28 12" fill="none" aria-hidden="true">
+      {dir === "prev" ? (
+        <path
+          d="M8 1 2 6l6 5M2 6h24"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <path
+          d="m20 1 6 5-6 5M2 6h24"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+    </svg>
   );
 }
 
@@ -246,22 +271,24 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   <h1>{s.title}</h1>
                   <p>{s.description}</p>
                   <Link className="hero-cta" href={s.href}>
-                    {s.cta} <span className="home-corner-arrow" aria-hidden="true">↗</span>
+                    {s.cta}
                   </Link>
                 </div>
               </article>
             ))}
           </div>
+          {/* Десктоп: тонкие стрелки без кружков + точки; мобилка — только точки */}
           <div className="hero-controls">
             <button
               type="button"
+              className="hero-nav-arrow"
               aria-label="Предыдущий баннер"
               onClick={() => {
                 setSlide((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
                 startHero();
               }}
             >
-              ‹
+              <LineArrow dir="prev" />
             </button>
             <div className="hero-dots">
               {HERO_SLIDES.map((_, i) => (
@@ -280,17 +307,15 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
             </div>
             <button
               type="button"
+              className="hero-nav-arrow"
               aria-label="Следующий баннер"
               onClick={() => {
                 setSlide((prev) => (prev + 1) % HERO_SLIDES.length);
                 startHero();
               }}
             >
-              ›
+              <LineArrow dir="next" />
             </button>
-          </div>
-          <div className="hero-pagination">
-            0{slide + 1} / 0{HERO_SLIDES.length}
           </div>
         </section>
 
@@ -312,14 +337,14 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                 aria-label="Предыдущие товары"
                 onClick={() => stepFeatured(-1)}
               >
-                ‹
+                <LineArrow dir="prev" />
               </button>
               <button
                 type="button"
                 aria-label="Следующие товары"
                 onClick={() => stepFeatured(1)}
               >
-                ›
+                <LineArrow dir="next" />
               </button>
             </div>
           </div>
@@ -348,7 +373,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <Image src={c.photo} alt="" fill sizes="(max-width: 960px) 50vw, 25vw" />
               <span className="category-tile-copy">
                 <span className="category-tile-slogan">{c.slogan}</span>
-                <span className="category-tile-name">{c.name} <span className="home-corner-arrow" aria-hidden="true">↗</span></span>
+                <span className="category-tile-name">{c.name}</span>
               </span>
             </Link>
           ))}
@@ -371,7 +396,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   ?.scrollBy({ left: -440, behavior: "smooth" })
               }
             >
-              ←
+              <LineArrow dir="prev" />
             </button>
             <button
               type="button"
@@ -382,7 +407,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                   ?.scrollBy({ left: 440, behavior: "smooth" })
               }
             >
-              →
+              <LineArrow dir="next" />
             </button>
           </div>
         </section>
@@ -395,7 +420,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
               <span className="promo-text">
                 <strong>{p.title}</strong>
                 <span>{p.sub}</span>
-                <u>Смотреть подборку <span className="home-corner-arrow" aria-hidden="true">↗</span></u>
+                <u>Смотреть подборку</u>
               </span>
             </Link>
           ))}
@@ -551,7 +576,7 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
                 </div>
                 <span className="eyebrow">{b.tag}</span>
                 <h3>{b.title}</h3>
-                <span className="text-link">Читать <span className="home-corner-arrow" aria-hidden="true">↗</span></span>
+                <span className="text-link">Читать</span>
               </Link>
             ))}
           </div>
