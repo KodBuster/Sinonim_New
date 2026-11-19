@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { getProductDisplayName } from "@/lib/product-display-names";
 import type { CategorySlug, Product, ProductDetails } from "@/lib/products";
 import { findProductBySlug } from "@/lib/product-slug";
 import { parseDiamondWeightNumber } from "@/lib/product-weight";
@@ -431,15 +432,21 @@ async function mapCatalogItems(
     ? items
     : items.filter((item) => resolveListStockInfo(item, stockMap).inStock);
 
-  return visible.map((item) =>
-    mapCatalogProduct(
+  return visible.map((item) => {
+    const product = mapCatalogProduct(
       item,
       category,
       extras.setMap[String(item.productId)],
       stockMap.get(item.productId),
       extras.manufacturerMap[String(item.productId)],
-    ),
-  );
+    );
+    return {
+      ...product,
+      name: getProductDisplayName(product.artNo, product.name),
+      // Preserve the insert mass when replacing an SEO title with a display name.
+      diamondWeightLabel: extractInsertMassFromName(product.name)?.replace(/\s*г$/i, ""),
+    };
+  });
 }
 
 export async function fetchAdvantShopCategories() {
@@ -590,6 +597,7 @@ export async function loadAdvantShopProductDetails(
 
   return {
     ...product,
+    name: getProductDisplayName(product.artNo ?? summary.artNo, product.name),
     slug: summary.slug,
     urlPath: summary.urlPath,
     // Каталог AdvantShop отдаёт price=0, если у модификации не стоит «Главная».

@@ -15,6 +15,8 @@ export type Product = {
   price: number;
   image: string;
   stoneWeight: number;
+  /** Масса вставки в граммах, в том числе из исходного названия каталога. */
+  diamondWeightLabel?: string;
   badge?: "Хит" | "Новинка";
   isNew?: boolean;
   /** Производитель из AdvantShop (для коллекций, напр. FW 2026). */
@@ -62,8 +64,6 @@ export type ProductDetails = Product & {
   sizeWeightGrams?: Record<string, string>;
   /** Цена оффера по ключу размера (value из sizeOptions). */
   sizePrices?: Record<string, number>;
-  /** Подпись «Масса вставки» из свойства AdvantShop (не из описания). */
-  diamondWeightLabel?: string;
   /** Масса вставки по ключу размера (артикул модификации). */
   sizeDiamondWeights?: Record<string, string>;
   /** Длина (мм) из AdvantShop — для браслетов в блоке «Характеристики». */
