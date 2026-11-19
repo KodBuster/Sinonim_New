@@ -15,7 +15,7 @@ export const metadata = buildPageMetadata({
 export default function HomePage() {
   return (
     <>
-      <link rel="stylesheet" href="/redesign/site.css?v=category-text-shadow" precedence="home" />
+      <link rel="stylesheet" href="/redesign/site.css?v=product-title-sizes" precedence="home" />
       <JsonLd data={buildHomeJsonLd()} />
       <RedesignHome socialProducts={homeSocialProducts} />
       <Footer />

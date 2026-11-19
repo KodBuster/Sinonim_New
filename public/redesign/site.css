@@ -928,3 +928,18 @@ body { display: block !important; }
     display: none;
   }
 }
+
+.synonym-redesign-root .featured-products-track .card-name,
+.synonym-redesign-root .bestsellers .card-name {
+  font-size: 14px;
+}
+
+.synonym-redesign-root .social-product-name {
+  font-size: 15px;
+}
+
+@media (max-width: 375px) {
+  .synonym-redesign-root .bestsellers .card-name {
+    font-size: 12px;
+  }
+}
