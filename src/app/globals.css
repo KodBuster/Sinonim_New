@@ -388,7 +388,7 @@ body.mango-chat-open .messenger-fab {
   }
   .messenger-fab {
     right: 0;
-    transform: translateX(66.6667%);
+    transform: translateX(50%);
     transition: transform .25s ease, right .25s ease, bottom .25s ease;
   }
   .messenger-fab.open, .messenger-fab:has(.messenger-fab-main:focus-visible) {
