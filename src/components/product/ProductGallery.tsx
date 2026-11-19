@@ -194,7 +194,13 @@ function GalleryThumbnails({
       }
 
       const currentIndex = Math.round(el.scrollTop / stepSize);
-      const target = (currentIndex + direction) * stepSize;
+      let target = (currentIndex + direction) * stepSize;
+      if (infinite && setHeight != null && target >= setHeight * 2) {
+        // Rebase before moving down: with two slides and an odd viewport height,
+        // the browser's maximum scrollTop is 1px short of the lower loop boundary.
+        el.scrollTop -= setHeight;
+        target -= setHeight;
+      }
       wheelLockRef.current = true;
       el.scrollTo({ top: target, behavior: "smooth" });
       window.setTimeout(() => {
@@ -202,7 +208,7 @@ function GalleryThumbnails({
         wheelLockRef.current = false;
       }, 320);
     },
-    [stepSize, normalizeLoop],
+    [infinite, setHeight, stepSize, normalizeLoop],
   );
 
   useEffect(() => {
