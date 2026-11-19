@@ -1,3 +1,5 @@
+import { getProductDisplayName } from "@/lib/product-display-names";
+
 export type RedesignProduct = {
   id: string;
   category: "rings" | "earrings" | "necklaces" | "bracelets";
@@ -56,7 +58,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "r01",
     category: "rings",
-    name: "Кольцо с синтетическим алмазом 0,05 г",
+    name: getProductDisplayName("191-048025-7", "Кольцо"),
     price: 18500,
     sku: "191-048025-7",
     slug: "koltso-iz-serebra-925-s-ogranennym-sinteticheskim-almazom-0-05-g-0-25-karat-serebro-925-11545",
@@ -65,7 +67,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "r02",
     category: "rings",
-    name: "Кольцо с синтетическим алмазом 0,02 г",
+    name: getProductDisplayName("191-025010-7", "Кольцо"),
     price: 7900,
     sku: "191-025010-7",
     slug: "koltso-iz-serebra-925-s-ogranennym-sinteticheskim-almazom-0-02-g-0-1-karat-serebro-925-11542",
@@ -74,7 +76,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "r03",
     category: "rings",
-    name: "Кольцо с синтетическим алмазом 0,007 г",
+    name: getProductDisplayName("191-024003-7", "Кольцо"),
     price: 5500,
     sku: "191-024003-7",
     slug: "koltso-iz-serebra-925-s-ogranennym-sinteticheskim-almazom-0-007-g-0-04-karat-serebro-925-11541",
@@ -83,7 +85,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "r04",
     category: "rings",
-    name: "Кольцо с синтетическим алмазом 0,1 г",
+    name: getProductDisplayName("191-038050-4", "Кольцо"),
     price: 39900,
     sku: "191-038050-4",
     slug: "koltso-iz-serebra-925-s-ogranennym-sinteticheskim-almazom-0-1-g-0-5-karat-serebro-925-10075",
@@ -92,7 +94,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "e01",
     category: "earrings",
-    name: "Серьги с синтетическими алмазами",
+    name: getProductDisplayName("JYE60210L", "Серьги"),
     price: 59500,
     sku: "JYE60210L",
     slug: "sergi-s-brilliantom-0-2-karat-serebro-925-12895",
@@ -101,7 +103,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "n01",
     category: "necklaces",
-    name: "Колье с синтетическим алмазом",
+    name: getProductDisplayName("JYN60328L-47", "Колье"),
     price: 33900,
     sku: "JYN60328L-47",
     slug: "kole-0-2-karat-serebro-925-12890",
@@ -110,7 +112,7 @@ export const PRODUCTS: RedesignProduct[] = [
   {
     id: "b01",
     category: "bracelets",
-    name: "Браслет с синтетическим алмазом",
+    name: getProductDisplayName("JYB50576L-5", "Браслет"),
     price: 39950,
     sku: "JYB50576L-5",
     slug: "braslet-s-brilliantom-0-2-karat-serebro-925-12894",

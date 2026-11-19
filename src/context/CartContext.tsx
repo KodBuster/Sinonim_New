@@ -17,6 +17,7 @@ import {
   type CartItem,
 } from "@/lib/cart";
 import { formatCaratWeight } from "@/lib/product-weight";
+import { getProductDisplayName } from "@/lib/product-display-names";
 
 type AddToCartInput = {
   productSlug: string;
@@ -51,7 +52,12 @@ function loadCart(): CartItem[] {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as CartItem[];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed)
+      ? parsed.map((item) => ({
+          ...item,
+          name: getProductDisplayName(item.artNo, item.name),
+        }))
+      : [];
   } catch {
     return [];
   }
@@ -187,7 +193,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           id,
           productSlug: input.productSlug,
-          name: input.name,
+          name: getProductDisplayName(input.artNo, input.name),
           image: input.image,
           price: input.price,
           stoneWeight: input.stoneWeight,

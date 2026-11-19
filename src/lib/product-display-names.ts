@@ -148,9 +148,21 @@ const PRODUCT_DISPLAY_NAMES: Readonly<Record<string, string>> = {
   "194-005024": "Браслет «Линии счастья»"
 };
 
+// This catalog offer uses a different base SKU from its parent product.
+const OFFER_PRODUCT_SKUS: Readonly<Record<string, string>> = {
+  "195-029002-8": "195-029020",
+};
+
 export function getProductDisplayName(artNo: string | undefined, fallback: string): string {
   const key = artNo?.trim();
-  return key && Object.hasOwn(PRODUCT_DISPLAY_NAMES, key)
-    ? PRODUCT_DISPLAY_NAMES[key]
+  if (!key) return fallback;
+  if (Object.hasOwn(PRODUCT_DISPLAY_NAMES, key)) return PRODUCT_DISPLAY_NAMES[key];
+
+  // Size/offer SKUs append a numeric suffix to the product SKU.
+  const productKey = Object.hasOwn(OFFER_PRODUCT_SKUS, key)
+    ? OFFER_PRODUCT_SKUS[key]
+    : key.replace(/-\d+$/, "");
+  return Object.hasOwn(PRODUCT_DISPLAY_NAMES, productKey)
+    ? PRODUCT_DISPLAY_NAMES[productKey]
     : fallback;
 }
