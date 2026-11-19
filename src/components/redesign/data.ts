@@ -195,7 +195,7 @@ export const JOURNAL = [
     tag: "СТИЛЬ",
     title: "Искусство сочетаний",
     href: "/blog/kak-vybrat-ukrashenie-sem-pravil",
-    image: `${ASSET}/blog/blog-guide-v02.webp`,
+    image: "/images/Тёплый_портрет_с_подвеской_и_вазой.png",
   },
   {
     tag: "ГИД",
