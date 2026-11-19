@@ -20,11 +20,11 @@ export function isLifestyleMediaSrc(src: string): boolean {
   }
 }
 
-/** Режим вписывания слайда галереи: видео и лайф — cover, студия — contain. */
+/** Видео и студийные фото вписываются целиком; лайф-фото заполняют кадр. */
 export function galleryObjectFitForSrc(
   src: string,
   kind: "image" | "video" = "image",
 ): "cover" | "contain" {
-  if (kind === "video") return "cover";
+  if (kind === "video") return "contain";
   return isLifestyleMediaSrc(src) ? "cover" : "contain";
 }

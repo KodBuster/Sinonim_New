@@ -368,7 +368,7 @@ function InspiredVideoModal({
                   videoRefs.current[i] = node;
                 }}
                 src={src}
-                className="h-full w-full object-cover"
+                className="absolute inset-0 block h-full w-full min-h-0 min-w-0 max-h-full max-w-full object-contain"
                 muted={muted}
                 playsInline
                 preload={Math.abs(i - index) <= 1 ? "auto" : "metadata"}

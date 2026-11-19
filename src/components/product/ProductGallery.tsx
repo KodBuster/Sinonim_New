@@ -107,7 +107,7 @@ function GalleryVideo({
       loop
       playsInline
       preload={preload}
-      className={className}
+      className={`absolute inset-0 block h-full w-full min-h-0 min-w-0 max-h-full max-w-full ${className}`}
       aria-label={label}
     />
   );
@@ -300,7 +300,7 @@ function GalleryThumbnails({
                     key={`thumb-${slide.src}-${index}`}
                     src={slide.src}
                     label={`Видео ${name}`}
-                    className="h-full w-full object-cover bg-white pointer-events-none"
+                    className="object-contain bg-white pointer-events-none"
                     preload="metadata"
                     playing={!isVideoActive}
                   />
@@ -793,7 +793,7 @@ function MobileProductGallery({
       )}
 
       <div
-        className="relative mx-1 aspect-square overflow-hidden rounded-xl bg-white touch-pan-y"
+        className="relative mx-1 aspect-square w-[calc(100%-0.5rem)] max-h-[calc(100dvh-var(--site-header-height,4rem)-5rem)] overflow-hidden rounded-xl bg-white touch-pan-y"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
@@ -904,7 +904,7 @@ function GalleryLayout({
         ? Number.parseFloat(headerRaw)
         : HEADER_FALLBACK_PX;
       const viewportMaxH = Math.max(
-        280,
+        120,
         window.innerHeight -
           (Number.isFinite(headerH) ? headerH : HEADER_FALLBACK_PX) -
           VIEWPORT_CHROME_PX,
@@ -927,7 +927,7 @@ function GalleryLayout({
       // basis(h) ≈ 1.175h + 16 - 0.375*THUMB_PAIR_GAP → h под maxGalleryW
       const maxHFromWidth =
         (maxGalleryW - GALLERY_MAIN_THUMBS_GAP + 0.375 * THUMB_PAIR_GAP) / 1.175;
-      const mainH = Math.max(280, Math.min(viewportMaxH, maxHFromWidth));
+      const mainH = Math.max(120, Math.min(viewportMaxH, maxHFromWidth));
 
       document.documentElement.style.setProperty(
         "--pdp-gallery-main-max-h",
@@ -1706,7 +1706,7 @@ export function ProductGallery({
           onActiveIndexChange={setActiveIndex}
           thumbClassName="aspect-[3/4] w-full rounded-xl"
           /* Высота через .pdp-gallery-main → --pdp-gallery-main-max-h (см. globals.css) */
-          mainClassName="pdp-gallery-main aspect-[4/5] !flex-none w-auto max-w-full min-h-[280px] rounded-xl"
+          mainClassName="pdp-gallery-main aspect-[4/5] !flex-none w-auto max-w-full min-h-0 rounded-xl"
           mainObjectFit="contain"
           mainImageSizes="(max-width: 1280px) 100vw, 48vw"
           thumbImageSizes="(max-width: 1280px) 120px, 180px"
