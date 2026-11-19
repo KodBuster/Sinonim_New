@@ -153,16 +153,23 @@ const OFFER_PRODUCT_SKUS: Readonly<Record<string, string>> = {
   "195-029002-8": "195-029020",
 };
 
-export function getProductDisplayName(artNo: string | undefined, fallback: string): string {
+export function resolveProductDisplaySku(artNo: string | undefined): string | undefined {
   const key = artNo?.trim();
-  if (!key) return fallback;
-  if (Object.hasOwn(PRODUCT_DISPLAY_NAMES, key)) return PRODUCT_DISPLAY_NAMES[key];
+  if (!key) return undefined;
+  if (Object.hasOwn(PRODUCT_DISPLAY_NAMES, key)) return key;
 
   // Size/offer SKUs append a numeric suffix to the product SKU.
   const productKey = Object.hasOwn(OFFER_PRODUCT_SKUS, key)
     ? OFFER_PRODUCT_SKUS[key]
     : key.replace(/-\d+$/, "");
   return Object.hasOwn(PRODUCT_DISPLAY_NAMES, productKey)
-    ? PRODUCT_DISPLAY_NAMES[productKey]
+    ? productKey
+    : undefined;
+}
+
+export function getProductDisplayName(artNo: string | undefined, fallback: string): string {
+  const key = resolveProductDisplaySku(artNo);
+  return key
+    ? PRODUCT_DISPLAY_NAMES[key]
     : fallback;
 }
