@@ -134,8 +134,8 @@ export const HERO_SLIDES = [
     cta: "Найти своё колье",
   },
   {
-    desktop: `${ASSET}/hero/desktop/hero-02-v01.webp`,
-    mobile: `${ASSET}/hero/mobile/hero-02-v01.webp`,
+    desktop: `${ASSET}/hero/desktop/hero-02-v02.webp`,
+    mobile: `${ASSET}/hero/mobile/hero-02-v02.webp`,
     eyebrow: "ПОДАРОК СЕБЕ",
     title: "Увидеть. Влюбиться. Надеть.",
     description: "Серьги, в которых хочется ловить каждый взгляд и улыбаться своему отражению. Осталось выбрать свои.",
