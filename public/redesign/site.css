@@ -833,10 +833,13 @@ body { display: block !important; }
 .social-product-image { position: relative; height: 100%; background: #FFFFFF; }
 .social-product .social-product-image img { object-fit: contain; filter: none; }
 .social-product-copy { display: grid; gap: 4px; }
-.social-product-name {
-  display: -webkit-box;
+.social-section .social-product-name.product-preview-title {
+  display: -webkit-box !important;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 2 !important;
+  white-space: normal !important;
+  min-height: 2.4em !important;
+  line-height: 1.2;
   overflow: hidden;
 }
 

@@ -92,12 +92,12 @@ function LineArrow({ dir }: { dir: "prev" | "next" }) {
 }
 
 const SOCIAL_VIDEOS: { src: string; article?: string }[] = [
-  { src: "/images/new1_live.mp4" },
+  { src: "/images/new1_live.mp4", article: "803-03075" },
   { src: "/images/braslet_video_6.mp4", article: "194-030210-11" },
   { src: "/images/braslet_video_3.mp4", article: "194-030210-1" },
   { src: "/images/braslet_video_7.mp4", article: "194-032002-5" },
-  { src: "/images/new2_live.mp4" },
-  { src: "/images/new3_live.mp4" },
+  { src: "/images/new2_live.mp4", article: "195-020025-14" },
+  { src: "/images/new3_live.mp4", article: "191-006010-1" },
 ];
 const SOCIAL_VIDEO_COUNT = SOCIAL_VIDEOS.length;
 const INITIAL_SOCIAL_VIDEO = SOCIAL_VIDEO_COUNT + 2;

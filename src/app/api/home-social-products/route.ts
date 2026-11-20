@@ -17,8 +17,8 @@ export async function GET() {
       return [variant.article, {
         name: product?.name ?? fallback.name,
         image: fallback.image,
-        price: product?.sizePrices?.[size] ?? variant.price,
-        href: `/products/${product?.slug ?? fallback.slug}?${new URLSearchParams({ size })}`,
+        price: size ? product?.sizePrices?.[size] ?? variant.price : product?.price ?? variant.price,
+        href: `/products/${product?.slug ?? fallback.slug}${size ? `?${new URLSearchParams({ size })}` : ""}`,
       }];
     });
   }));
