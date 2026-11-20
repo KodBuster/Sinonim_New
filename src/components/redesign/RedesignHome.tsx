@@ -445,35 +445,37 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
         </section>
 
         <section className="bestsellers wrap" data-home-block="4">
-          <SectionHead title="Бестселлеры" />
+          <div className="bestsellers-header">
+            <SectionHead title="Бестселлеры" />
+            <div className="scroll-actions">
+              <button
+                type="button"
+                aria-label="Предыдущие товары"
+                onClick={() =>
+                  document
+                    .getElementById("bestseller-scroll")
+                    ?.scrollBy({ left: -440, behavior: "smooth" })
+                }
+              >
+                <LineArrow dir="prev" />
+              </button>
+              <button
+                type="button"
+                aria-label="Следующие товары"
+                onClick={() =>
+                  document
+                    .getElementById("bestseller-scroll")
+                    ?.scrollBy({ left: 440, behavior: "smooth" })
+                }
+              >
+                <LineArrow dir="next" />
+              </button>
+            </div>
+          </div>
           <div className="cards-scroll" id="bestseller-scroll">
             {bestsellers.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}
-          </div>
-          <div className="scroll-actions">
-            <button
-              type="button"
-              aria-label="Предыдущие товары"
-              onClick={() =>
-                document
-                  .getElementById("bestseller-scroll")
-                  ?.scrollBy({ left: -440, behavior: "smooth" })
-              }
-            >
-              <LineArrow dir="prev" />
-            </button>
-            <button
-              type="button"
-              aria-label="Следующие товары"
-              onClick={() =>
-                document
-                  .getElementById("bestseller-scroll")
-                  ?.scrollBy({ left: 440, behavior: "smooth" })
-              }
-            >
-              <LineArrow dir="next" />
-            </button>
           </div>
         </section>
 

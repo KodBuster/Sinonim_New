@@ -938,6 +938,26 @@ body { display: block !important; }
   font-size: 15px;
 }
 
+.synonym-redesign-root .bestsellers-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.synonym-redesign-root .bestsellers-header .section-heading {
+  margin-bottom: 0;
+}
+
+.synonym-redesign-root .bestsellers .scroll-actions {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
 @media (max-width: 375px) {
   .synonym-redesign-root .bestsellers .card-name {
     font-size: 12px;
