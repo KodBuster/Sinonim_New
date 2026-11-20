@@ -958,6 +958,32 @@ body { display: block !important; }
   margin-top: 0;
 }
 
+.synonym-redesign-root .featured-products-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 11px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.synonym-redesign-root .featured-products-top .featured-products-intro h2 {
+  margin: 0;
+}
+
+.synonym-redesign-root .featured-products-top .featured-products-controls {
+  display: flex;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.synonym-redesign-root .featured-products-top .featured-arrows {
+  display: flex;
+}
+
 @media (max-width: 375px) {
   .synonym-redesign-root .bestsellers .card-name {
     font-size: 12px;

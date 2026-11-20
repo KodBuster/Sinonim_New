@@ -392,25 +392,25 @@ export function RedesignHome({ socialProducts }: { socialProducts: Record<string
         >
           <div className="featured-products-top">
             <div className="featured-products-intro">
-              <h2 id="featured-products-title">Что сегодня выберите?</h2>
+              <h2 id="featured-products-title">Вот оно. Ваше.</h2>
             </div>
-          </div>
-          <div className="featured-products-controls">
-            <div className="featured-arrows ml-auto">
-              <button
-                type="button"
-                aria-label="Предыдущие товары"
-                onClick={() => stepFeatured(-1)}
-              >
-                <LineArrow dir="prev" />
-              </button>
-              <button
-                type="button"
-                aria-label="Следующие товары"
-                onClick={() => stepFeatured(1)}
-              >
-                <LineArrow dir="next" />
-              </button>
+            <div className="featured-products-controls">
+              <div className="featured-arrows ml-auto">
+                <button
+                  type="button"
+                  aria-label="Предыдущие товары"
+                  onClick={() => stepFeatured(-1)}
+                >
+                  <LineArrow dir="prev" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Следующие товары"
+                  onClick={() => stepFeatured(1)}
+                >
+                  <LineArrow dir="next" />
+                </button>
+              </div>
             </div>
           </div>
           <div
