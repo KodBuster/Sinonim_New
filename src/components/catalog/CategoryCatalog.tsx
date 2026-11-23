@@ -8,6 +8,7 @@ import { buildFilterQuery, countActiveFilters, shouldShowSizeFilter, type Catalo
 import { SearchSortMenu } from "@/components/search/SearchSortMenu";
 import { ProductCard } from "./ProductCard";
 import styles from "./CategoryCatalog.module.css";
+import { useCatalogReturn } from "./useCatalogReturn";
 
 const PAGE_SIZE = 30;
 
@@ -15,6 +16,16 @@ type MobilePanel = "category" | "price" | "size" | "complects" | null;
 
 function ProductResults({ products }: { products: Product[] }) {
   const [limit, setLimit] = useState(PAGE_SIZE);
+  useEffect(() => {
+    try {
+      const stored = Number(sessionStorage.getItem(`catalog-limit:${location.pathname}${location.search}`));
+      if (Number.isSafeInteger(stored) && stored > PAGE_SIZE) {
+        // Restore the number of cards loaded before leaving this listing.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setLimit(stored);
+      }
+    } catch { /* Storage may be unavailable. */ }
+  }, []);
   const shown = Math.min(limit, products.length);
   return <>
     <div id="category-products" className={styles.grid}>
@@ -24,7 +35,10 @@ function ProductResults({ products }: { products: Product[] }) {
       <p role="status">Показано {shown} из {products.length}</p>
       <progress value={shown} max={products.length} aria-label="Показано товаров" />
       {shown < products.length && <button type="button" aria-controls="category-products"
-        onClick={() => setLimit(value => value + PAGE_SIZE)}>
+        onClick={() => {
+          setLimit(limit + PAGE_SIZE);
+          try { sessionStorage.setItem(`catalog-limit:${location.pathname}${location.search}`, String(limit + PAGE_SIZE)); } catch { /* Storage may be unavailable. */ }
+        }}>
         Показать ещё {Math.min(PAGE_SIZE, products.length - shown)}
       </button>}
     </div>
@@ -150,6 +164,8 @@ export function CategoryCatalog({ title, description, products, filters, basePat
   const router = useRouter();
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const catalogRef = useRef<HTMLElement>(null);
+  useCatalogReturn(catalogRef, basePath, loading, setDesktopOpen, setMobileOpen);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>(null);
   const { category } = filters;
   const isShop = basePath === "/shop";
@@ -211,7 +227,7 @@ export function CategoryCatalog({ title, description, products, filters, basePat
       onChange={() => router.push(href({ complectsOnly: !filters.complectsOnly }), { scroll: false })} />В составе комплекта</label></div>
   );
 
-  return <section className={styles.catalog}>
+  return <section ref={catalogRef} className={styles.catalog}>
     <div className={isShop ? `${styles.intro} ${styles.shopIntro}` : styles.intro}>
       <nav aria-label="Хлебные крошки">
         <ol className={styles.breadcrumbs}>

@@ -18,6 +18,11 @@ export function ScrollToTopOnNavigate() {
   }, []);
 
   useEffect(() => {
+    if (pathname === "/shop" || pathname.startsWith("/shop/") || pathname === "/collections/fw-2026") {
+      try {
+        if (sessionStorage.getItem(`catalog-return:${pathname}${window.location.search}`)) return;
+      } catch { /* Storage may be unavailable. */ }
+    }
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
 

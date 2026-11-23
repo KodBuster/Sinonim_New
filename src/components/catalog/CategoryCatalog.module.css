@@ -182,8 +182,19 @@
 }
 @media (max-width: 1100px) and (min-width: 768px) {
   .catalog { padding-inline: 24px; }
-  .layout { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; }
+  .layout { grid-template-columns: 200px minmax(0, 1fr); gap: 24px; --desktop-sidebar-gap: 24px; }
   .withoutSidebar { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 1024px) {
+  .layout:not(.withoutSidebar) {
+    grid-template-columns: minmax(0, calc((100% - var(--desktop-sidebar-gap, 34px) - 16px) / 4)) minmax(0, 1fr);
+  }
+  .sidebar { padding-right: 0; }
+  .filterSection summary { font-size: 18px; }
+  .options label { font-size: 17px; }
+  .sizes a { font-size: 14px; }
+  .sizeGuide { font-size: 16px; }
+  .reset { font-size: 17px; }
 }
 @media (max-width: 767px) {
   .catalog { padding: 20px 16px 40px; }
