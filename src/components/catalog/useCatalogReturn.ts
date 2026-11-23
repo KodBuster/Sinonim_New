@@ -20,17 +20,24 @@ export function useCatalogReturn(root: RefObject<HTMLElement | null>, path: stri
       element.querySelectorAll("details").forEach((section, index) => { section.open = saved!.sections[index] ?? false; });
     }
     const target = saved?.y ?? 0;
+    let frame = 0;
+    const started = performance.now();
     const restore = () => {
-      if (!restoring) return;
+      if (!restoring || window.location.pathname !== path) return;
       window.scrollTo({ top: target, behavior: "instant" });
-      if (Math.abs(window.scrollY - target) < 2) restoring = false;
+      // Navigation and card mounting can reset scroll after the first frame.
+      if (performance.now() - started < 750 || Math.abs(window.scrollY - target) >= 2) {
+        frame = requestAnimationFrame(restore);
+      } else {
+        restoring = false;
+      }
     };
-    const frame = requestAnimationFrame(restore);
+    frame = requestAnimationFrame(restore);
     const observer = new ResizeObserver(restore);
     observer.observe(element);
     const timer = window.setTimeout(() => { restoring = false; observer.disconnect(); }, 5000);
     const save = () => {
-      if (restoring) return;
+      if (restoring || !element.isConnected || window.location.pathname !== path) return;
       try {
         sessionStorage.setItem(key, JSON.stringify({ y: window.scrollY,
           desktop: element.querySelector('[aria-controls="category-filters"]')?.getAttribute("aria-expanded") === "true",
@@ -38,12 +45,19 @@ export function useCatalogReturn(root: RefObject<HTMLElement | null>, path: stri
           sections: [...element.querySelectorAll("details")].map(section => section.open) }));
       } catch { /* Storage may be unavailable. */ }
     };
+    const stopRestoring = () => { restoring = false; cancelAnimationFrame(frame); };
+    window.addEventListener("wheel", stopRestoring, { passive: true });
+    window.addEventListener("touchstart", stopRestoring, { passive: true });
+    window.addEventListener("keydown", stopRestoring);
     window.addEventListener("scroll", save, { passive: true });
     window.addEventListener("pagehide", save);
     element.addEventListener("click", save, true);
     element.addEventListener("toggle", save, true);
     return () => {
-      save(); cancelAnimationFrame(frame); clearTimeout(timer); observer.disconnect();
+      // The destination page may already have scrolled to zero at cleanup.
+      cancelAnimationFrame(frame); clearTimeout(timer); observer.disconnect();
+      window.removeEventListener("wheel", stopRestoring); window.removeEventListener("touchstart", stopRestoring);
+      window.removeEventListener("keydown", stopRestoring);
       window.removeEventListener("scroll", save); window.removeEventListener("pagehide", save);
       element.removeEventListener("click", save, true); element.removeEventListener("toggle", save, true);
     };
