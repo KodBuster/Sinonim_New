@@ -35,7 +35,7 @@ const getCachedAdvantShopCatalog = unstable_cache(
       categoryKey === "all" ? undefined : (categoryKey as CategorySlug);
     return fetchAdvantShopProducts({ category, sort });
   },
-  ["advantshop-catalog-v5-display-descriptions"],
+  ["advantshop-catalog-v6-display-images"],
   { revalidate: CATALOG_REVALIDATE_SECONDS, tags: ["catalog"] }
 );
 
@@ -52,7 +52,7 @@ const getCachedGiftCatalog = unstable_cache(
 
     return pickGiftProducts(PRODUCTS, sort, periodId);
   },
-  ["gift-catalog-v3-display-descriptions"],
+  ["gift-catalog-v4-display-images"],
   {
     revalidate: 86_400,
     tags: ["gift-catalog"],

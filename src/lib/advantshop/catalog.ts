@@ -1,5 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { getProductDisplayName } from "@/lib/product-display-names";
+import { getProductDisplayImage, getProductDisplayImages } from "@/lib/product-display-images";
 import { getProductDisplayDescription } from "@/lib/product-display-descriptions";
 import type { CategorySlug, Product, ProductDetails } from "@/lib/products";
 import { findProductBySlug } from "@/lib/product-slug";
@@ -443,6 +444,8 @@ async function mapCatalogItems(
     );
     return {
       ...product,
+      image: getProductDisplayImage(product.artNo, product.slug, product.image),
+      images: getProductDisplayImages(product.artNo, product.slug, product.images ?? [product.image]),
       name: getProductDisplayName(product.artNo, product.name),
       description: getProductDisplayDescription(product.artNo, product.description),
       // Preserve the insert mass when replacing an SEO title with a display name.
@@ -605,6 +608,8 @@ export async function loadAdvantShopProductDetails(
       product.description,
     ) ?? product.description,
     slug: summary.slug,
+    image: getProductDisplayImage(product.artNo ?? summary.artNo, summary.slug, product.image),
+    images: getProductDisplayImages(product.artNo ?? summary.artNo, summary.slug, product.images),
     urlPath: summary.urlPath,
     // Каталог AdvantShop отдаёт price=0, если у модификации не стоит «Главная».
     // Не затираем цену из offers нулём из summary.

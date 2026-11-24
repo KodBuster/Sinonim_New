@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FavoriteButton } from "@/components/favorites/FavoriteButton";
 import { ScrollReveal } from "@/components/ScrollReveal";
 import { formatPrice, type Product } from "@/lib/products";
+import { getProductDisplayImage } from "@/lib/product-display-images";
 
 type ProductCardProps = {
   product: Product;
@@ -22,7 +23,7 @@ export function ProductCard({
     <div className="aspect-square relative overflow-hidden bg-brand-surface">
       <Link href={`/products/${product.slug}`} className="absolute inset-0">
         <ProductImage
-          src={product.image}
+          src={getProductDisplayImage(product.artNo, product.slug, product.image)}
           alt={product.name}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"

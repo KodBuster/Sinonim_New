@@ -62,7 +62,7 @@ export const PRODUCTS: RedesignProduct[] = [
     price: 18500,
     sku: "191-048025-7",
     slug: "koltso-iz-serebra-925-s-ogranennym-sinteticheskim-almazom-0-05-g-0-25-karat-serebro-925-11545",
-    image: `${ASSET}/products/r01.jpg`,
+    image: "/images/191-048025_1.png",
   },
   {
     id: "r02",
@@ -98,7 +98,7 @@ export const PRODUCTS: RedesignProduct[] = [
     price: 59500,
     sku: "JYE60210L",
     slug: "sergi-s-brilliantom-0-2-karat-serebro-925-12895",
-    image: `${ASSET}/products/e01.jpg`,
+    image: "/images/JYE60210L_1.png",
   },
   {
     id: "n01",

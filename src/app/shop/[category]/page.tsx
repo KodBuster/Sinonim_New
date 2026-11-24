@@ -12,6 +12,13 @@ import { CATEGORIES, isValidCategory, type CategorySlug, type Product } from "@/
 import { getCatalogProducts } from "@/lib/products-service";
 import { getSiteUrl } from "@/lib/site-url";
 
+const CATEGORY_BACKGROUNDS: Partial<Record<CategorySlug, string>> = {
+  rings: "#FAF7F2",
+  earrings: "#F5F2ED",
+  pendants: "#F8F9FA",
+  bracelets: "#F1F3F5",
+};
+
 type PageProps = {
   params: Promise<{ category: string }>;
   searchParams: Promise<{
@@ -117,7 +124,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
         ]}
       />
       <Header />
-      <main>
+      <main style={{ backgroundColor: CATEGORY_BACKGROUNDS[categorySlug] }}>
         <Suspense fallback={<CatalogFallback />}>
           <CatalogView
             category={categorySlug}
